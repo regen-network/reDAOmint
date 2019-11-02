@@ -7,6 +7,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.34.4-0.20191102053406-d1f6c30cc5ee
 	github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d // indirect
 	github.com/golang/mock v1.3.1 // indirect
+	github.com/gorilla/mux v1.7.3
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect

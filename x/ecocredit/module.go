@@ -1,18 +1,18 @@
-package redaomint
+package ecocredit
 
 import (
-	"encoding/json"
-	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/gorilla/mux"
-	"github.com/spf13/cobra"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
+"encoding/json"
+"github.com/cosmos/cosmos-sdk/client/context"
+"github.com/cosmos/cosmos-sdk/codec"
+"github.com/cosmos/cosmos-sdk/types/module"
+"github.com/gorilla/mux"
+"github.com/spf13/cobra"
+sdk "github.com/cosmos/cosmos-sdk/types"
+abci "github.com/tendermint/tendermint/abci/types"
 )
 
 const (
-	ModuleName = "redaomint"
+	ModuleName = "ecocredit"
 	StoreKey = ModuleName
 	RouterKey = ModuleName
 	QuerierRoute = ModuleName

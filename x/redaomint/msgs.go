@@ -1,16 +1,25 @@
 package redaomint
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gaia/x/ecocredit"
+)
+
+type ReDAOMintMetadata struct {
+	Description           string                    `json:"description"`
+	ApprovedCreditClasses []ecocredit.CreditClassID `json:"credit_classes"`
+}
 
 type MsgCreateReDAOMint struct {
+	ReDAOMintMetadata
 	Sender sdk.AccAddress `json:"sender"`
-	Funds  sdk.Coins      `json:"funds"`
 }
 
 type MsgContributeReDAOMint struct {
 	Sender    sdk.AccAddress `json:"sender"`
 	ReDAOMint sdk.AccAddress `json:"re_dao_mint"`
 	Funds     sdk.Coins      `json:"funds"`
+	PriceInfo []byte         `json:"price_info"`
 }
 
 type MsgAllocateLandShares struct {
@@ -184,4 +193,3 @@ func (m MsgExecProposal) GetSignBytes() []byte {
 func (m MsgExecProposal) GetSigners() []sdk.AccAddress {
 	panic("implement me")
 }
-

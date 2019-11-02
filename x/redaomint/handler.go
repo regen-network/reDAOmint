@@ -10,8 +10,13 @@ func NewHandler(k Keeper) sdk.Handler {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case MsgCreateReDAOMint:
-			return sdk.Result{}
+			_, _, err :=k.CreateReDAOMint(ctx, msg.ReDAOMintMetadata)
+			return sdk.ResultFromError(err)
 		case MsgContributeReDAOMint:
+			_, err := k.ContributeReDAOMint(ctx, msg.Sender, msg.ReDAOMint, msg.Funds, msg.PriceInfo)
+			if err != nil {
+				return err.Result()
+			}
 			return sdk.Result{}
 		case MsgAllocateLandShares:
 			return sdk.Result{}

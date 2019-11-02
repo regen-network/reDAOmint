@@ -1,6 +1,8 @@
 package app
 
 import (
+	"github.com/cosmos/gaia/x/ecocredit"
+	"github.com/cosmos/gaia/x/redaomint"
 	"io"
 	"os"
 
@@ -57,6 +59,8 @@ var (
 		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
 		ibc.AppModuleBasic{},
+		ecocredit.AppModuleBasic{},
+		redaomint.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -108,6 +112,8 @@ type GaiaApp struct {
 	crisisKeeper   crisis.Keeper
 	paramsKeeper   params.Keeper
 	ibcKeeper      ibc.Keeper
+	ecocreditKeeper ecocredit.Keeper
+	redaomintKeeper redaomint.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -132,6 +138,7 @@ func NewGaiaApp(
 		bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
 		supply.StoreKey, mint.StoreKey, distr.StoreKey, slashing.StoreKey,
 		gov.StoreKey, params.StoreKey, ibc.StoreKey,
+		ecocredit.StoreKey, redaomint.StoreKey,
 	)
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
@@ -187,6 +194,9 @@ func NewGaiaApp(
 
 	app.ibcKeeper = ibc.NewKeeper(app.cdc, keys[ibc.StoreKey], ibc.DefaultCodespace, app.bankKeeper, app.supplyKeeper)
 
+	app.ecocreditKeeper = ecocredit.NewKeeper(cdc, keys[ecocredit.StoreKey])
+	app.redaomintKeeper = redaomint.NewKeeper(cdc, keys[redaomint.StoreKey], app.accountKeeper, app.bankKeeper, app.ecocreditKeeper, app.ibcKeeper)
+
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 	app.mm = module.NewManager(
@@ -201,12 +211,14 @@ func NewGaiaApp(
 		slashing.NewAppModule(app.slashingKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.accountKeeper, app.supplyKeeper),
 		ibc.NewAppModule(app.ibcKeeper),
+		ecocredit.NewAppModule(app.ecocreditKeeper),
+		redaomint.NewAppModule(app.redaomintKeeper),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
-	app.mm.SetOrderBeginBlockers(mint.ModuleName, distr.ModuleName, slashing.ModuleName)
+	app.mm.SetOrderBeginBlockers(mint.ModuleName, distr.ModuleName, slashing.ModuleName, redaomint.ModuleName)
 
 	app.mm.SetOrderEndBlockers(crisis.ModuleName, gov.ModuleName, staking.ModuleName)
 

@@ -10,9 +10,11 @@ func NewHandler(k Keeper) sdk.Handler {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		switch msg := msg.(type) {
 		case MsgCreateCreditClass:
-			return sdk.Result{}
+			_, err := k.CreateCreditClass(ctx, msg.CreditClassMetadata)
+			return sdk.ResultFromError(err)
 		case MsgIssueCredit:
-			return sdk.Result{}
+			_, err := k.IssueCredit(ctx, msg.CreditMetadata, msg.Holder)
+			return sdk.ResultFromError(err)
 		case MsgSendCredit:
 			return sdk.Result{}
 		case MsgBurnCredit:
