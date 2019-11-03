@@ -25,13 +25,13 @@ const (
 
 func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey,
-		creditClassBucket: orm.NewAutoIDBucket(storeKey, "credit-class", cdc, nil),
+		creditClassBucket: orm.NewAutoIDBucket(storeKey, "credit-class", cdc, nil, nil),
 		creditBucket: orm.NewAutoIDBucket(storeKey, "credit", cdc, []orm.Index{
 			{IndexByGeoPolygon, func(key []byte, value interface{}) (indexValue []byte, err error) {
 				meta := value.(CreditMetadata)
 				return meta.GeoPolygon, nil
 			}},
-		}),
+		}, nil),
 		creditHoldingsBucket: orm.NewNaturalKeyBucket(storeKey, "credit-holdings", cdc, nil),
 	}
 }

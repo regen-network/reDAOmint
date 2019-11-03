@@ -81,14 +81,14 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, accountKeeper auth.Accou
 		ecocreditKeeper: ecocreditKeeper,
 		ibcKeeper:       ibcKeeper,
 		router: router,
-		metadataBucket:  orm.NewAutoIDBucket(storeKey, "metadata", cdc, nil),
+		metadataBucket:  orm.NewAutoIDBucket(storeKey, "metadata", cdc, nil, nil),
 		landAllocations: orm.NewNaturalKeyBucket(storeKey, "allocations", cdc, []orm.Index{
 			{Name: IndexByReDAOMint, Indexer: func(key []byte, value interface{}) (indexValue []byte, err error) {
 				allocation := value.(LandAllocation)
 				return allocation.ReDAOMint, nil
 			}},
 		}),
-		proposalBucket: orm.NewAutoIDBucket(storeKey, "proposal", cdc, nil),
+		proposalBucket: orm.NewAutoIDBucket(storeKey, "proposal", cdc, nil, nil),
 		votesBucket: orm.NewNaturalKeyBucket(storeKey, "votes", cdc, []orm.Index{
 			{IndexByProposal,
 				func(key []byte, value interface{}) (indexValue []byte, err error) {
