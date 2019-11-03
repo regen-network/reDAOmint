@@ -173,7 +173,7 @@ func (k Keeper) VerifyOrSlashLandStewards(ctx sdk.Context, redaomint sdk.AccAddr
 			break
 		}
 		found := false
-		k.ecocreditKeeper.IteratorCreditsByGeoPolygon(ctx, allocation.GeoPolygon, func(metadata ecocredit.CreditMetadata) (stop bool) {
+		k.ecocreditKeeper.IterateCreditsByGeoPolygon(ctx, allocation.GeoPolygon, func(metadata ecocredit.CreditMetadata) (stop bool) {
 			// TODO: make this more robust so that different credits could span these dates
 			if (metadata.StartDate.Before(startDate) || metadata.StartDate.Equal(startDate)) &&
 				(metadata.EndDate.After(endDate) || metadata.EndDate.Equal(endDate)) {
