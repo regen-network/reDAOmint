@@ -10,26 +10,26 @@ This is the Regen network team's submission for the DeFi hackathon. Our objectiv
 
 A **reDAOmint** (*regenerative + endowment + DAO + tendermint*) is a shareholder DAO that holds a pool of assets for perpetuity, distributing the dividends of those assets with land stewards in critical bioregions in exchange for protecting the land. The DAO funds itself by minting new shares in exchange for valuable market assets that produce dividends or rewards (such as staking tokens).
 
-
 ## System Objectives
 
 Our system is designed to foster the discovery, continual funding and growth of impactful projects across the globe. We wish to connect land stewards with new contribution streams in an open marketplace that punishes unacceptable behaviors and rewards both investor and good stewards of the land. Transparency, consistency and a sound financial basis are scarce in the impact industry, making it a compelling use-case for those interested in blockchain applications. Blockchain is inheritly powered by electricity, so some externalities on the climate are to be expected. The synergies between the two will lead to powerful new investment mechanisms and impact outcomes.
+profit support could provide.
 
-For investors in the **reDAOmint**, the investment is not simple charity. **reDAOmint** shares pay ecosystem service credits as dividends, representing the ecological benefits of protecting the land. An example of these are carbon credits, which will see an explosion of demand by governments and the public. **reDAOmint** shareholders can either use the ecosystem service credits they have received as dividends for their own offseting purposes or sell them in our marketplace.
+For investors in the **reDAOmint**, the investment is not, however, simply a charity and could also be consider a decentralize public hedgefund. **reDAOmint** shares provide dividends that come in the form of ecosystem service credits. These credits represent unaccounted ecological benefits from protecting the land which is an emerging asset class  estimated to grow from 36B USD in 2017 to 1T USD over next 20 years. An example of these are carbon credits, which will be increasingly demanded by governments and the public. **reDAOmint** shareholders can either use the ecosystem service credits they have received as dividends for their own offseting purposes or sell them on the market.
 
-Our **reDAOmint** provides the following benefits:
+![](https://i.imgur.com/v7lKV1q.png)
 
-* insolates land stewards from seasonal variation in the productivity of stewarded land.
-* insolates land stewards from volatility in the price and demand for ecosystem service credits.
-* efficiently generates ecosystem services by good capital management
-* auditability of all funding and verification activities
+In comparison to traditional mechanisms for protecting land, a **reDAOmint** provides the following benefits:
+
+* insulates land stewards from seasonal variation in the ecological health of land
+* insulates land stewards from volatility in the price of ecosystem service credits
+* effici
 
 ## Construction
 
 is built using the Cosmos SDK using a fork of cosmos/gaia that includes IBC support. A diff of our work can be seen [here](https://github.com/regen-network/reDAOmint/pull/3).
 
 We produced two new Cosmos modules and an ORM package to create the **reDAOmint** for this hackathon.
-
 
 ### `redaomint` module
 
@@ -58,7 +58,7 @@ We rely on a core flow of investor contributions to grow the DAO. This DAO culti
 
 ![DAO cycle](imgs/quarterlyCycle.jpg?raw=true "Cycle Diagram")
 
-The DAO's system evolution is driven by this overturning quarterly cycle.
+The DAO's system evolution is driven by this overturning quarterly cycle. We incorporate game theory concepts like Skin in the Game via authority reputation and land staking, governance is updated via voting on values for the DAO and reviewing proposals for improvement of the process or inclusion of new measures, projects and authorities.
 
 ### Tokens
 
@@ -114,20 +114,28 @@ Because we have funds under management, the governance is a bit more complicated
 * Issues ARG tokens under an argument of positive plant biomass impact they process quarterly using a government-approved model and open landsat data.
 * Manages AOI submission for a government-funded reforestation project in Papa New Guinea
 * Manages AOI for a community-supported-agriculture consortium in Ecuador
-* Issues and buys back ARG tokens on the DEX with trading pairs to: the stablecoin and the undifferentiated investor dividend token.
+* Issues and buys back ARG tokens on the DEX with trading pairs to: the stablecoin and the EDS investor token.
 
-### Larry (investor)
+### Larry (impact investor)
 
 * Discovers the DAO through a relative that gifted him enDAOmint tokens
 * Sets a buy order to purchase more enDAOmint tokens at the beginning of each month
 * Deeply concerned about climate change and the wellbeing of elephants.
-* Buys biomass and carbon sequestration tokens
+* Recieves and redeems biomass and carbon sequestration tokens
 * Advocates for new living capital tokens to represent elephant interests (habitat reclamation, elephant rescue operations)
+
+### Joe (homo economicus)
+
+* Profit-motivated
+* Observes the quarterly issuance of carbon credits are sold below market price.
+* Buys in to EDS, gets Carbon credits as quarterly dividend and buys more when they are all dumped on the DEX.
+* Sells the credits over the course of the quarter as price recovers for healty profit.
 
 ## Interaction
 
 1. Larry recieves his quarterly dividend in the form of 120 undifferentiated contributor credits.
 2. Quarterly harvest for ARG is positive - they issue corresponding percentages of stablecoin outputs to their managed project and puts the AOI-tokens for biomass (ARG) on the exchange to trade against contributor credits.
-3. Larry goes to the DEX, and redeems most of his credits for biomass tokens like ARG and carbon credits issued by IPCC.
-4. Larry sends a portion of his credits as a bounty for inclusion of an elephant habitat authority.
-5. Stewards of ARG projects submit claims for expected biomass increase next quarter (or allow ARG to do it on their behalf).
+3. Larry redeems most of his credits as biomass tokens like ARG and carbon credits issued by IPCC.
+4. Larry is never required to be aware of the land stewards producing ARG, or other investors motivated differently like Joe. But, he could trace his issued living capital tokens via the issuing authorities, or explore other account holder information within the DAO if he wished.
+5. Larry sends a portion of his credits as a bounty for inclusion of an elephant habitat authority.
+6. Stewards of ARG projects submit claims for expected biomass increase next quarter (or allow ARG to do it on their behalf).
