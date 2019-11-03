@@ -5,10 +5,14 @@ case basis.
 package orm
 
 import (
+	"bytes"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"strings"
 )
 
 type BucketBase interface {
@@ -97,17 +101,17 @@ func (b bucketBase) indexStore(ctx sdk.Context, indexName string) prefix.Store {
 func (b bucketBase) ByIndex(ctx sdk.Context, indexName string, key []byte) (Iterator, error) {
 	st := b.indexStore(ctx, indexName)
 	it := st.Iterator(key, nil)
-	return &indexIterator{b, it, key, key}, nil
+	return &indexIterator{b, ctx, it, key, key}, nil
 }
 
 func (b bucketBase) ByIndexPrefixScan(ctx sdk.Context, indexName string, start []byte, end []byte, reverse bool) (Iterator, error) {
 	st := b.indexStore(ctx, indexName)
 	if reverse {
 		it := st.ReverseIterator(start, end)
-		return &indexIterator{b, it, start, end}, nil
+		return &indexIterator{b, ctx,it, start, end}, nil
 	} else {
 		it := st.Iterator(start, end)
-		return &indexIterator{b, it, start, end}, nil
+		return &indexIterator{b, ctx, it, start, end}, nil
 	}
 }
 
@@ -180,38 +184,41 @@ func (n naturalKeyBucket) Delete(ctx sdk.Context, hasID HasID) error {
 	return n.delete(ctx, hasID.ID())
 }
 
-func NewAutoIDBucket(key sdk.StoreKey, bucketPrefix string, cdc *codec.Codec, indexes []Index, idGenerator  func(x uint64) []byte) AutoIDBucket {
+func NewAutoIDBucket(key sdk.StoreKey, bucketPrefix string, cdc *codec.Codec, indexes []Index, idGenerator func(x uint64) []byte) AutoIDBucket {
 	return &autoIDBucket{externalKeyBucket{bucketBase{key, bucketPrefix, cdc, indexes}}, idGenerator}
 }
 
 type autoIDBucket struct {
 	externalKeyBucket
-	idGenerator  func(x uint64) []byte
+	idGenerator func(x uint64) []byte
 }
 
-//func writeUInt64(x uint64) []byte {
-//
-//}
-//
-//func readUInt64(x uint64) []byte {
-//
-//}
+func writeUInt64(x uint64) []byte {
+	buf := make([]byte, binary.MaxVarintLen64)
+	n := binary.PutUvarint(buf, x)
+	return buf[:n]
+}
+
+func readUInt64(bz []byte) (uint64, error) {
+	x, n := binary.Uvarint(bz)
+	if n <= 0 {
+		return 0, fmt.Errorf("can't read var uint64")
+	}
+	return x, nil
+}
 
 func (a autoIDBucket) Create(ctx sdk.Context, value interface{}) ([]byte, error) {
 	st := a.indexStore(ctx, "$")
 	bz := st.Get([]byte("$"))
 	var nextID uint64 = 0
+	var err error
 	if bz != nil {
-		err := a.cdc.UnmarshalBinaryBare(bz, &nextID)
+		nextID, err = readUInt64(bz)
 		if err != nil {
 			return nil, err
 		}
 	}
-	bz, err := a.cdc.MarshalBinaryBare(nextID)
-	if err != nil {
-		return nil, err
-	}
-	st.Set([]byte("$"), bz)
+	st.Set([]byte("$"), writeUInt64(nextID))
 	return a.idGenerator(nextID), nil
 }
 
@@ -221,26 +228,57 @@ type iterator struct {
 }
 
 func (i *iterator) LoadNext(dest interface{}) (key []byte, err error) {
-	panic("implement me")
+	if !i.it.Valid() {
+		return nil, fmt.Errorf("invalid")
+	}
+	key = i.it.Key()
+	err = i.cdc.UnmarshalBinaryBare(i.it.Value(), dest)
+	if err != nil {
+		return nil, err
+	}
+	i.it.Next()
+	return key, nil
 }
 
 func (i *iterator) Release() {
-	panic("implement me")
+	i.it.Close()
 }
 
 type indexIterator struct {
 	bucketBase
-	it  sdk.Iterator
+	ctx sdk.Context
+	it    sdk.Iterator
 	start []byte
-	end []byte
+	end   []byte
 }
 
 func (i indexIterator) LoadNext(dest interface{}) (key []byte, err error) {
-	panic("implement me")
+	if !i.it.Valid() {
+		return nil, fmt.Errorf("invalid")
+	}
+	pieces := strings.Split(string(i.it.Key()), "/")
+	if len(pieces) != 2 {
+		return nil, fmt.Errorf("unexpected index key")
+	}
+	indexPrefix, err := hex.DecodeString(pieces[0])
+	if err != nil {
+		return nil, err
+	}
+	// check out of range
+	if !((i.start == nil || bytes.Compare(i.start, indexPrefix) >= 0) && (i.end == nil || bytes.Compare(indexPrefix, i.end) <= 0)) {
+		return nil, fmt.Errorf("done")
+	}
+	key, err = hex.DecodeString(pieces[1])
+	if err != nil {
+		return nil, err
+	}
+	err = i.bucketBase.GetOne(i.ctx, key, dest)
+	if err != nil {
+		return nil, err
+	}
+	return key, nil
 }
 
 func (i indexIterator) Release() {
-	panic("implement me")
+	i.it.Close()
 }
-
-
