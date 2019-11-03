@@ -1,3 +1,7 @@
+/* Package orm (object-relational mapping) provides a set of tools on top of the KV store interface to handle
+things like secondary indexes and auto-generated ID's that would otherwise need to be hand-generated on a case by
+case basis.
+*/
 package orm
 
 import (
@@ -44,11 +48,46 @@ type Iterator interface {
 	Release()
 }
 
-type bucket struct {
+type externalKeyBucket struct {
 	key          sdk.StoreKey
 	bucketPrefix string
 	cdc          *codec.Codec
 	indexes      []Index
+}
+
+type naturalKeyBucket struct {
+	key          sdk.StoreKey
+	bucketPrefix string
+	cdc          *codec.Codec
+	indexes      []Index
+}
+
+func (n naturalKeyBucket) PrefixScan(ctx sdk.Context, start []byte, end []byte, reverse bool) (Iterator, error) {
+	panic("implement me")
+}
+
+func (n naturalKeyBucket) ByIndex(ctx sdk.Context, indexName string, key []byte) (Iterator, error) {
+	panic("implement me")
+}
+
+func (n naturalKeyBucket) ByIndexPrefixScan(ctx sdk.Context, indexName string, start []byte, end []byte, reverse bool) (Iterator, error) {
+	panic("implement me")
+}
+
+func (n naturalKeyBucket) Has(ctx sdk.Context, key []byte) (bool, error) {
+	panic("implement me")
+}
+
+func (n naturalKeyBucket) GetOne(ctx sdk.Context, dest HasID) error {
+	panic("implement me")
+}
+
+func (n naturalKeyBucket) Save(ctx sdk.Context, value HasID) error {
+	panic("implement me")
+}
+
+func (n naturalKeyBucket) Delete(ctx sdk.Context, hasID HasID) error {
+	panic("implement me")
 }
 
 type Indexer func(key []byte, value interface{}) (indexValue []byte, err error)
@@ -59,23 +98,63 @@ type Index struct {
 }
 
 func NewExternalKeyBucket(key sdk.StoreKey, bucketPrefix string, cdc *codec.Codec, indexes []Index) ExternalKeyBucket {
-	panic("TODO")
+	return &externalKeyBucket{key, bucketPrefix, cdc, indexes}
 }
 
 func NewNaturalKeyBucket(key sdk.StoreKey, bucketPrefix string, cdc *codec.Codec, indexes []Index) NaturalKeyBucket {
-	panic("TODO")
+	return &naturalKeyBucket{key, bucketPrefix, cdc, indexes}
 }
 
-func NewAutoIDBucket(key sdk.StoreKey, bucketPrefix string, cdc *codec.Codec, indexes []Index) AutoIDBucket {
-	panic("TODO")
+func NewAutoIDBucket(key sdk.StoreKey, bucketPrefix string, cdc *codec.Codec, indexes []Index, idGenerator  func(x uint64) []byte) AutoIDBucket {
+	return &autoIDBucket{key, bucketPrefix, cdc, indexes, idGenerator}
 }
+type autoIDBucket struct {
+	key          sdk.StoreKey
+	bucketPrefix string
+	cdc          *codec.Codec
+	indexes      []Index
+	idGenerator  func(x uint64) []byte
+}
+
+func (a autoIDBucket) PrefixScan(ctx sdk.Context, start []byte, end []byte, reverse bool) (Iterator, error) {
+	panic("implement me")
+}
+
+func (a autoIDBucket) ByIndex(ctx sdk.Context, indexName string, key []byte) (Iterator, error) {
+	panic("implement me")
+}
+
+func (a autoIDBucket) ByIndexPrefixScan(ctx sdk.Context, indexName string, start []byte, end []byte, reverse bool) (Iterator, error) {
+	panic("implement me")
+}
+
+func (a autoIDBucket) Has(ctx sdk.Context, key []byte) (bool, error) {
+	panic("implement me")
+}
+
+func (a autoIDBucket) GetOne(ctx sdk.Context, key []byte, dest interface{}) error {
+	panic("implement me")
+}
+
+func (a autoIDBucket) Save(ctx sdk.Context, key []byte, m interface{}) error {
+	panic("implement me")
+}
+
+func (a autoIDBucket) Delete(ctx sdk.Context, key []byte) error {
+	panic("implement me")
+}
+
+func (a autoIDBucket) Create(ctx sdk.Context, value interface{}) ([]byte, error) {
+	panic("implement me")
+}
+
 
 type iterator struct {
 	cdc *codec.Codec
 	it  sdk.Iterator
 }
 
-func (b bucket) GetOne(ctx sdk.Context, key []byte, dest interface{}) error {
+func (b externalKeyBucket) GetOne(ctx sdk.Context, key []byte, dest interface{}) error {
 	store := prefix.NewStore(ctx.KVStore(b.key), []byte(b.bucketPrefix))
 	bz := store.Get(key)
 	if len(bz) == 0 {
@@ -84,11 +163,11 @@ func (b bucket) GetOne(ctx sdk.Context, key []byte, dest interface{}) error {
 	return b.cdc.UnmarshalBinaryBare(bz, dest)
 }
 
-func (b bucket) rootStore(ctx sdk.Context) prefix.Store {
+func (b externalKeyBucket) rootStore(ctx sdk.Context) prefix.Store {
 	return prefix.NewStore(ctx.KVStore(b.key), []byte(b.bucketPrefix))
 }
 
-func (b bucket) PrefixScan(ctx sdk.Context, start []byte, end []byte, reverse bool) (Iterator, error) {
+func (b externalKeyBucket) PrefixScan(ctx sdk.Context, start []byte, end []byte, reverse bool) (Iterator, error) {
 	st := b.rootStore(ctx)
 	if reverse {
 		it := st.ReverseIterator(start, end)
@@ -99,17 +178,17 @@ func (b bucket) PrefixScan(ctx sdk.Context, start []byte, end []byte, reverse bo
 	}
 }
 
-func (b bucket) indexStore(ctx sdk.Context, indexName string) prefix.Store {
+func (b externalKeyBucket) indexStore(ctx sdk.Context, indexName string) prefix.Store {
 	return prefix.NewStore(ctx.KVStore(b.key), []byte(fmt.Sprintf("%s/%s", b.bucketPrefix, indexName)))
 }
 
-func (b bucket) ByIndex(ctx sdk.Context, indexName string, key []byte) (Iterator, error) {
+func (b externalKeyBucket) ByIndex(ctx sdk.Context, indexName string, key []byte) (Iterator, error) {
 	st := b.indexStore(ctx, indexName)
 	it := st.Iterator(key, key)
 	return &iterator{b.cdc, it}, nil
 }
 
-func (b bucket) ByIndexPrefixScan(ctx sdk.Context, indexName string, start []byte, end []byte, reverse bool) (Iterator, error) {
+func (b externalKeyBucket) ByIndexPrefixScan(ctx sdk.Context, indexName string, start []byte, end []byte, reverse bool) (Iterator, error) {
 	st := b.indexStore(ctx, indexName)
 	if reverse {
 		it := st.ReverseIterator(start, end)
@@ -120,29 +199,29 @@ func (b bucket) ByIndexPrefixScan(ctx sdk.Context, indexName string, start []byt
 	}
 }
 
-func (b bucket) Save(ctx sdk.Context, key []byte, value interface{}) error {
-  rootStore := b.rootStore(ctx)
-  bz, err := b.cdc.MarshalBinaryBare(value)
-  if err != nil {
-  	return err
-  }
-  rootStore.Set(key, bz)
-  for _, idx := range b.indexes {
-  	i, err := idx.Indexer(key, value)
-  	if err != nil {
-  		return err
+func (b externalKeyBucket) Save(ctx sdk.Context, key []byte, value interface{}) error {
+	rootStore := b.rootStore(ctx)
+	bz, err := b.cdc.MarshalBinaryBare(value)
+	if err != nil {
+		return err
 	}
-	indexStore := b.indexStore(ctx, idx.Name)
-	indexStore.Set([]byte(fmt.Sprintf("%x, %x", i, key)), []byte{0})
-  }
-  return nil
+	rootStore.Set(key, bz)
+	for _, idx := range b.indexes {
+		i, err := idx.Indexer(key, value)
+		if err != nil {
+			return err
+		}
+		indexStore := b.indexStore(ctx, idx.Name)
+		indexStore.Set([]byte(fmt.Sprintf("%x, %x", i, key)), []byte{0})
+	}
+	return nil
 }
 
-func (b bucket) Delete(ctx sdk.Context, key []byte) error {
+func (b externalKeyBucket) Delete(ctx sdk.Context, key []byte) error {
 	panic("TODO")
 }
 
-func (b bucket) Has(ctx sdk.Context, key []byte) (bool, error) {
+func (b externalKeyBucket) Has(ctx sdk.Context, key []byte) (bool, error) {
 	rootStore := b.rootStore(ctx)
 	return rootStore.Has(key), nil
 }

@@ -29,7 +29,7 @@ type CreditMetadata struct {
 	GeoPolygon  []byte         `json:"geo_polygon"`
 	StartDate   time.Time      `json:"start_date"`
 	EndDate     time.Time      `json:"end_date"`
-	// LiquidUnits specifies how many total units of this credit are issued for this polygon
+	// LiquidUnits specifies how many tradeable units of this credit are issued for this polygon
 	LiquidUnits sdk.Dec `json:"liquid_units"`
 	BurnedUnits sdk.Dec `json:"burned_units"`
 }
