@@ -1,6 +1,44 @@
+/* Package redaomint defines a DAO structure for pooling funds to support regenerative ecological projects.
+
+A "reDAOmint" (derived from the words endowment, DAO, Tendermint, and regeneration) is a DAO that holds different
+assets in a pool. It also has shares of its own which can be used for governance voting. Governance can choose
+to mint new shares and increase the pool of funds. Governance can also choose to stake coins in the pool over IBC and
+withdraw the rewards back into the pool, or to take the funds to a DEX and re-balance the portfolio. This
+functionality alone defines a crypto-economic primitive of a DAO that is both a coin (has shares) and an account
+(pooled funds) that could in the future be abstracted for more generic usage.
+
+In order to support regenerative ecological projects, the reDAOmint specifies a set of geo-polygons corresponding to
+land and land stewards who are the "beneficiaries" of the assets managed in the fund. By getting an "allocation" within
+the reDAOmint the land steward managing this piece of land is entering into a contract whereby if they continue to
+manage the land regeneratively they will receive rewards from the dividends and accrual of assets in the funds. If
+they fail, they will be removed from the reDAOmint and no longer receive this income. This agreement thus creates a
+long-term incentive to maintain the health of the land as perpetual income is provided by the reDAOmint only if
+regeneration continues.
+
+Verification of regenerative activity happens by the issuance of ecosystem service credits (see the ecocredit module).
+Ecosystem service credits represent the positive ecological output of land. For example if growing trees on the land
+has sequestered carbon and protected biodiversity, those benefits could be packaged into a carbon credit or biodiversity
+credit which can be purchased by companies and governments who need to offset their negative environmental impact. The
+reDAOmint specifies that in order to receive their allocation, a piece of land must have been issued some of ecosystem
+credit (from an approved list of credit classes) or else their allocation will be slashed.
+
+The creation of credits (through approved issuers) is intended to take place on a regular cycle (quarterly or annually),
+and when this credit creation event occurs, each land steward's activity is checked by VerifyOrSlashLandStewards. After
+this has happened, DistributeFunds is used to distribute some of the assets in the pool to these land stewards as
+specified by their allocations. Finally, the credits that have been created are actually distributed back to the
+shareholders of the DAO. So there is an upside for land stewards participating - they get the benefit of a managed
+pool of assets for providing ecosystem services which insulates them from varying year to year yields of those services,
+and there is an upside for shareholders as their investment in the fund provides them with ecosystem service credits
+which they can sell or burn (retire).
+
+While much of the important activity must occur off-chain through good governance of the fund, the key primitives of
+a reDAOmint are interesting both as more generic crypto-economic primitives and as an innovative way of funding
+ecological projects through good asset management and transparent accounting.
+ */
 package redaomint
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -156,12 +194,27 @@ func (k Keeper) DistributeCredit(ctx sdk.Context, redaomint sdk.AccAddress, cred
 	return err
 }
 
+func creditClassesContains(classes []ecocredit.CreditClassID, cls ecocredit.CreditClassID) bool {
+	for _, c := range classes {
+		if bytes.Equal(c, cls) {
+			return true
+		}
+	}
+	return false
+}
+
 // VerifyOrSlashLandStewards cycles through all of the land allocations and checks if there is a credit for that piece
 // of land for that time window in the class of approved credits, if not, the land allocation is slashed from the
 // pool of land allocations for this reDAOmint and can no longer receive rewards. Receipt of an approved credit is
 // required to keep receiving rewards. In the future the start and end dates would be set more automatically and
 // this process would be run on a schedule
 func (k Keeper) VerifyOrSlashLandStewards(ctx sdk.Context, redaomint sdk.AccAddress, startDate time.Time, endDate time.Time) error {
+	var redaoMeta ReDAOMintMetadata
+	err := k.metadataBucket.GetOne(ctx, redaomint, &redaoMeta)
+	if err != nil {
+		return err
+	}
+
 	iterator, err := k.landAllocations.ByIndexPrefixScan(ctx, IndexByReDAOMint, nil, nil, false)
 	if err != nil {
 		return nil
@@ -176,7 +229,8 @@ func (k Keeper) VerifyOrSlashLandStewards(ctx sdk.Context, redaomint sdk.AccAddr
 		k.ecocreditKeeper.IterateCreditsByGeoPolygon(ctx, allocation.GeoPolygon, func(metadata ecocredit.CreditMetadata) (stop bool) {
 			// TODO: make this more robust so that different credits could span these dates
 			if (metadata.StartDate.Before(startDate) || metadata.StartDate.Equal(startDate)) &&
-				(metadata.EndDate.After(endDate) || metadata.EndDate.Equal(endDate)) {
+				(metadata.EndDate.After(endDate) || metadata.EndDate.Equal(endDate)) &&
+				creditClassesContains(redaoMeta.ApprovedCreditClasses, metadata.CreditClass) {
 				found = true
 				return true
 			}
