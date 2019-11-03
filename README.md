@@ -23,7 +23,8 @@ In comparison to traditional mechanisms for protecting land, a **reDAOmint** pro
 
 * insulates land stewards from seasonal variation in the ecological health of land
 * insulates land stewards from volatility in the price of ecosystem service credits
-* effici
+* efficiently generates ecosystem services by good capital management
+* auditability of all funding and verification activity
 
 ## Construction
 
