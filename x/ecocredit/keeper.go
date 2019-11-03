@@ -145,6 +145,9 @@ func (k Keeper) GetCreditHolding(ctx sdk.Context, credit CreditID, holder sdk.Ac
 // until we have on-chain geo-index support or this iteration gets moved off-chain.
 func (k Keeper) IterateCreditsByGeoPolygon(ctx sdk.Context, geoPolygon []byte, callback func(metadata CreditMetadata) (stop bool)) {
 	iterator, err := k.creditBucket.ByIndex(ctx, IndexByGeoPolygon, geoPolygon)
+	if iterator != nil {
+		defer iterator.Release()
+	}
 	if err != nil {
 		return
 	}

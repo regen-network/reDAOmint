@@ -15,17 +15,27 @@ import (
 	"strings"
 )
 
+// BucketBase provides methods shared by all buckets
 type BucketBase interface {
-	PrefixScan(ctx sdk.Context, start []byte, end []byte, reverse bool) (Iterator, error)
-	ByIndex(ctx sdk.Context, indexName string, key []byte) (Iterator, error)
-	ByIndexPrefixScan(ctx sdk.Context, indexName string, start []byte, end []byte, reverse bool) (Iterator, error)
+	// Has checks if key is in the bucket
 	Has(ctx sdk.Context, key []byte) (bool, error)
+	// PrefixScan returns an iterator between the start and end keys for the bucket
+	PrefixScan(ctx sdk.Context, start []byte, end []byte, reverse bool) (Iterator, error)
+	// ByIndex returns an iterator that returns objects in the bucket with the given index key
+	ByIndex(ctx sdk.Context, indexName string, key []byte) (Iterator, error)
+	// ByIndex returns an iterator that returns objects in the bucket with index keys between start and end. Start and
+	// end can be set to nil to iterator through all values
+	ByIndexPrefixScan(ctx sdk.Context, indexName string, start []byte, end []byte, reverse bool) (Iterator, error)
 }
 
+// ExternalKeyBucket defines a bucket where the key is stored externally to the value object
 type ExternalKeyBucket interface {
 	BucketBase
+	// GetOne deserializes the value at the given key into the pointer passed as dest
 	GetOne(ctx sdk.Context, key []byte, dest interface{}) error
-	Save(ctx sdk.Context, key []byte, m interface{}) error
+	// Save saves the given key value pair
+	Save(ctx sdk.Context, key []byte, value interface{}) error
+	// Delete deletes the value at the given key
 	Delete(ctx sdk.Context, key []byte) error
 }
 
@@ -33,13 +43,20 @@ type HasID interface {
 	ID() []byte
 }
 
+// NaturalKeyBucket defines a bucket where all values implement HasID and the key is stored it the value and
+// returned by the HasID method
 type NaturalKeyBucket interface {
 	BucketBase
+	// GetOne deserializes the value into the pointer passed as dest, with the key calculated from the pointers
+	// current valeu
 	GetOne(ctx sdk.Context, dest HasID) error
+	// Save saves the value passed in
 	Save(ctx sdk.Context, value HasID) error
+	// Delete deletes any value with a key corresponding the the ID of the hasID struct passed in
 	Delete(ctx sdk.Context, hasID HasID) error
 }
 
+// Indexer specifies a function that takes a key value pair and returns the index key for the given index
 type Indexer func(key []byte, value interface{}) (indexValue []byte, err error)
 
 type Index struct {
@@ -47,6 +64,7 @@ type Index struct {
 	Indexer Indexer
 }
 
+// AutoIDBucket specifies a bucket where keys are generated via an auto-incremented interger
 type AutoIDBucket interface {
 	ExternalKeyBucket
 
@@ -54,8 +72,12 @@ type AutoIDBucket interface {
 	Create(ctx sdk.Context, value interface{}) ([]byte, error)
 }
 
+// Iterator allows iteration through a sequence of key value pairs
 type Iterator interface {
+	// LoadNext loads the next value in the sequence into the pointer passed as dest and returns the key. If there
+	// are no more items an error is returned
 	LoadNext(dest interface{}) (key []byte, err error)
+	// Release releases the iterator and should be called at the end of iteration
 	Release()
 }
 
@@ -152,7 +174,8 @@ func (b externalKeyBucket) Save(ctx sdk.Context, key []byte, value interface{}) 
 func (b bucketBase) delete(ctx sdk.Context, key []byte) error {
 	rootStore := b.rootStore(ctx)
 	rootStore.Delete(key)
-	panic("TODO: delete indexes")
+	// TODO: delete indexes
+	return nil
 }
 
 func (b externalKeyBucket) Delete(ctx sdk.Context, key []byte) error {

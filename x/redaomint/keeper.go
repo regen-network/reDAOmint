@@ -216,6 +216,9 @@ func (k Keeper) VerifyOrSlashLandStewards(ctx sdk.Context, redaomint sdk.AccAddr
 	}
 
 	iterator, err := k.landAllocations.ByIndexPrefixScan(ctx, IndexByReDAOMint, nil, nil, false)
+	if iterator != nil {
+		defer iterator.Release()
+	}
 	if err != nil {
 		return nil
 	}
@@ -260,6 +263,9 @@ func (k Keeper) DistributeFunds(ctx sdk.Context, redaomint sdk.AccAddress, funds
 	}
 	totalAllocations := metadata.TotalLandAllocations
 	iterator, err := k.landAllocations.ByIndexPrefixScan(ctx, IndexByReDAOMint, nil, nil, false)
+	if iterator != nil {
+		defer iterator.Release()
+	}
 	if err != nil {
 		return nil
 	}
@@ -318,6 +324,9 @@ func (k Keeper) ExecProposal(ctx sdk.Context, id ProposalID) sdk.Result {
 
 	var votes sdk.Int
 	iterator, err := k.votesBucket.ByIndex(ctx, IndexByProposal, id)
+	if iterator != nil {
+		defer iterator.Release()
+	}
 	if err != nil {
 		return sdk.ResultFromError(err)
 	}
