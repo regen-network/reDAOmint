@@ -5,8 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// MsgCreateCreditClass creates a class of credits and returns a new CreditClassID
-type MsgCreateCreditClass struct {
+type CreditClassMetadata struct {
 	// Designer is the entity which designs a credit class at the top-level and
 	// certifies issuers
 	Designer sdk.AccAddress
@@ -17,30 +16,36 @@ type MsgCreateCreditClass struct {
 	Issuers []sdk.AccAddress
 }
 
-type CreditClassID uint64
-
-type CreditMetadata struct {
-	Issuer sdk.AccAddress
-	CreditClass CreditClassID
-	GeoPolygon     []byte
-	StartDate   time.Time
-	EndDate     time.Time
-	// Units specifies how many total units of this credit are issued for this polygon
-	Units  sdk.Dec
+// MsgCreateCreditClass creates a class of credits and returns a new CreditClassID
+type MsgCreateCreditClass struct {
+	CreditClassMetadata `json:"metadata"`
 }
 
-// MsgIssueCredit issues a credit to the Holder with the number of Units provided
+type CreditClassID []byte
+
+type CreditMetadata struct {
+	Issuer      sdk.AccAddress `json:"issuer"`
+	CreditClass CreditClassID  `json:"credit_class"`
+	GeoPolygon  []byte         `json:"geo_polygon"`
+	StartDate   time.Time      `json:"start_date"`
+	EndDate     time.Time      `json:"end_date"`
+	// LiquidUnits specifies how many tradeable units of this credit are issued for this polygon
+	LiquidUnits sdk.Dec `json:"liquid_units"`
+	BurnedUnits sdk.Dec `json:"burned_units"`
+}
+
+// MsgIssueCredit issues a credit to the Holder with the number of LiquidUnits provided
 // for the provided credit class, polygon, and start and end dates. A new CreditID
 // is returned. It is illegal to issue a credit where the provided polygon and dates
 // overlaps with those of an existing credit of the same class
 type MsgIssueCredit struct {
-	Metadata CreditMetadata
+	CreditMetadata `json:"metadata"`
 	// Holder receives the credit from the issuer and can send it to other holders
 	// or consume it
-	Holder sdk.AccAddress
+	Holder sdk.AccAddress `json:"holder"`
 }
 
-type CreditID uint64
+type CreditID []byte
 
 // MsgSendCredit sends the provided number of units of the credit from the from
 // address to the to address
@@ -99,7 +104,7 @@ func (m MsgIssueCredit) GetSignBytes() []byte {
 }
 
 func (m MsgIssueCredit) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{m.Metadata.Issuer}
+	return []sdk.AccAddress{m.Issuer}
 }
 
 func (m MsgSendCredit) Route() string {
@@ -141,4 +146,3 @@ func (m MsgBurnCredit) GetSignBytes() []byte {
 func (m MsgBurnCredit) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Holder}
 }
-

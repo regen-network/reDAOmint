@@ -1,37 +1,59 @@
 package redaomint
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gaia/x/ecocredit"
+)
 
-type MsgCreateReDAOMint struct {
-	Sender sdk.AccAddress `json:"sender"`
-	Funds  sdk.Coins      `json:"funds"`
+type ReDAOMintMetadata struct {
+	Description           string                    `json:"description"`
+	ApprovedCreditClasses []ecocredit.CreditClassID `json:"credit_classes"`
+	TotalLandAllocations  sdk.Int                   `json:"total_land_allocations"`
 }
 
-type MsgContributeReDAOMint struct {
-	Sender    sdk.AccAddress `json:"sender"`
+type MsgCreateReDAOMint struct {
+	ReDAOMintMetadata
+	Founder       sdk.AccAddress `json:"founder"`
+	FounderShares sdk.Int        `json:"founder_shares"`
+}
+
+type MsgMintShares struct {
 	ReDAOMint sdk.AccAddress `json:"re_dao_mint"`
-	Funds     sdk.Coins      `json:"funds"`
+	Shares    sdk.Int        `json:"shares"`
+}
+
+type LandAllocation struct {
+	ReDAOMint   sdk.AccAddress `json:"re_dao_mint"`
+	LandSteward sdk.AccAddress `json:"land_steward"`
+	GeoPolygon  []byte         `json:"geo_polygon"`
+	Allocation  sdk.Int        `json:"allocation"`
 }
 
 type MsgAllocateLandShares struct {
-	ReDAOMint   sdk.AccAddress `json:"re_dao_mint"`
-	LandSteward sdk.AccAddress `json:"land_steward"`
-	// GeoPolygon in EWKB format
-	GeoPolygon []byte  `json:"geo_polygon"`
-	Allocation sdk.Dec `json:"allocation"`
+	LandAllocation
 }
 
-type MsgWithdrawCredits struct {
-	ReDAOMint   sdk.AccAddress
-	Shareholder sdk.AccAddress
+type MsgDistributeCredit struct {
+	ReDAOMint sdk.AccAddress
+	Credit    ecocredit.CreditID
 }
 
-type ProposalID uint64
+type MsgDistributeFunds struct {
+	ReDAOMint sdk.AccAddress
+	Funds     sdk.Coins
+}
 
-type MsgPropose struct {
-	Proposer  sdk.AccAddress `json:"proposer"`
+type ProposalID []byte
+
+type Proposal struct {
 	ReDAOMint sdk.AccAddress `json:"re_dao_mint"`
 	Msgs      []sdk.Msg      `json:"msgs"`
+	Proposer  sdk.AccAddress `json:"proposer"`
+}
+
+type MsgPropose struct {
+	Proposal
 }
 
 type MsgVote struct {
@@ -46,142 +68,174 @@ type MsgExecProposal struct {
 }
 
 func (m MsgCreateReDAOMint) Route() string {
-	panic("implement me")
+	return RouterKey
 }
 
 func (m MsgCreateReDAOMint) Type() string {
-	panic("implement me")
+	return "create-redaomint"
 }
 
 func (m MsgCreateReDAOMint) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if m.Founder.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+	// if !m.FounderShares.IsPositive() {
+	// 	return sdk.ErrUnknownRequest("invalid founder shares")
+	// }
+
+	return nil
 }
 
 func (m MsgCreateReDAOMint) GetSignBytes() []byte {
-	panic("implement me")
+	bz := ModuleCdc.MustMarshalJSON(m)
+	return sdk.MustSortJSON(bz)
 }
 
 func (m MsgCreateReDAOMint) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.Founder}
+}
+
+func (m MsgMintShares) Route() string {
+	return RouterKey
+}
+
+func (m MsgMintShares) Type() string {
+	return "mint-shares"
+}
+
+func (m MsgMintShares) ValidateBasic() sdk.Error {
 	panic("implement me")
 }
 
-func (m MsgContributeReDAOMint) Route() string {
-	panic("implement me")
+func (m MsgMintShares) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(m)
+	return sdk.MustSortJSON(bz)
 }
 
-func (m MsgContributeReDAOMint) Type() string {
-	panic("implement me")
-}
-
-func (m MsgContributeReDAOMint) ValidateBasic() sdk.Error {
-	panic("implement me")
-}
-
-func (m MsgContributeReDAOMint) GetSignBytes() []byte {
-	panic("implement me")
-}
-
-func (m MsgContributeReDAOMint) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+func (m MsgMintShares) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{m.ReDAOMint}
 }
 
 func (m MsgAllocateLandShares) Route() string {
-	panic("implement me")
+	return RouterKey
 }
 
 func (m MsgAllocateLandShares) Type() string {
-	panic("implement me")
+	return "allocate-landshares"
 }
 
 func (m MsgAllocateLandShares) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if m.ReDAOMint.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+	if m.LandSteward.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+	if !(len(m.GeoPolygon) > 0) {
+		return sdk.ErrUnknownRequest("invalid geo polygon")
+	}
+	if !m.Allocation.IsPositive() {
+		return sdk.ErrUnknownRequest("invalid allocation")
+	}
+
+	return nil
 }
 
 func (m MsgAllocateLandShares) GetSignBytes() []byte {
-	panic("implement me")
+	bz := ModuleCdc.MustMarshalJSON(m)
+	return sdk.MustSortJSON(bz)
 }
 
 func (m MsgAllocateLandShares) GetSigners() []sdk.AccAddress {
-	panic("implement me")
-}
-
-func (m MsgWithdrawCredits) Route() string {
-	panic("implement me")
-}
-
-func (m MsgWithdrawCredits) Type() string {
-	panic("implement me")
-}
-
-func (m MsgWithdrawCredits) ValidateBasic() sdk.Error {
-	panic("implement me")
-}
-
-func (m MsgWithdrawCredits) GetSignBytes() []byte {
-	panic("implement me")
-}
-
-func (m MsgWithdrawCredits) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+	return []sdk.AccAddress{m.ReDAOMint, m.LandSteward}
 }
 
 func (m MsgPropose) Route() string {
-	panic("implement me")
+	return RouterKey
 }
 
 func (m MsgPropose) Type() string {
-	panic("implement me")
+	return "propose"
 }
 
 func (m MsgPropose) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if m.ReDAOMint.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+	if !(len(m.Msgs) > 0) {
+		return sdk.ErrUnknownRequest("invalid number of messages")
+	}
+	if m.Proposer.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+
+	return nil
 }
 
 func (m MsgPropose) GetSignBytes() []byte {
-	panic("implement me")
+	bz := ModuleCdc.MustMarshalJSON(m)
+	return sdk.MustSortJSON(bz)
 }
 
 func (m MsgPropose) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+	return []sdk.AccAddress{m.Proposer, m.ReDAOMint}
 }
 
 func (m MsgVote) Route() string {
-	panic("implement me")
+	return RouterKey
 }
 
 func (m MsgVote) Type() string {
-	panic("implement me")
+	return "vote"
 }
 
 func (m MsgVote) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if !(len(m.ProposalID) > 0) {
+		return sdk.ErrUnknownRequest("invalid proposal id")
+	}
+	if m.Voter.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+	return nil
 }
 
 func (m MsgVote) GetSignBytes() []byte {
-	panic("implement me")
+	bz := ModuleCdc.MustMarshalJSON(m)
+	return sdk.MustSortJSON(bz)
 }
 
 func (m MsgVote) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+	return []sdk.AccAddress{m.Voter}
 }
 
 func (m MsgExecProposal) Route() string {
-	panic("implement me")
+	return RouterKey
 }
 
 func (m MsgExecProposal) Type() string {
-	panic("implement me")
+	return "exec-proposal"
 }
 
 func (m MsgExecProposal) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if !(len(m.ProposalID) > 0) {
+		return sdk.ErrUnknownRequest("invalid proposal id")
+	}
+	if m.Signer.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+
+	return nil
 }
 
 func (m MsgExecProposal) GetSignBytes() []byte {
-	panic("implement me")
+	bz := ModuleCdc.MustMarshalJSON(m)
+	return sdk.MustSortJSON(bz)
 }
 
 func (m MsgExecProposal) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+	return []sdk.AccAddress{m.Signer}
 }
 
+func (a LandAllocation) ID() []byte {
+	return []byte(fmt.Sprintf("%x/%x", a.ReDAOMint, a.GeoPolygon))
+}
