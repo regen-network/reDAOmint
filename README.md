@@ -64,7 +64,7 @@ The DAO's system evolution is driven by this overturning quarterly cycle. We inc
 
 #### Contributed tokens
 
-The DEX accepts any token the DAO has been configured to manage: first Cosmos tokens like TRUEstory and Atoms, perhaps bitcoins and litecoin later.
+The DEX accepts any token the DAO has been configured to manage: first Cosmos tokens like TRU and ATOM, and perhaps BTC and ETH later.
 
 #### EnDAOmint tokenized shares
 
