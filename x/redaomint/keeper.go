@@ -34,7 +34,7 @@ which they can sell or burn (retire).
 While much of the important activity must occur off-chain through good governance of the fund, the key primitives of
 a reDAOmint are interesting both as more generic crypto-economic primitives and as an innovative way of funding
 ecological projects through good asset management and transparent accounting.
- */
+*/
 package redaomint
 
 import (
@@ -80,7 +80,7 @@ func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, accountKeeper auth.Accou
 		supplyKeeper:    supplyKeeper,
 		ecocreditKeeper: ecocreditKeeper,
 		ibcKeeper:       ibcKeeper,
-		router: router,
+		router:          router,
 		metadataBucket:  orm.NewAutoIDBucket(storeKey, "metadata", cdc, nil, nil),
 		landAllocations: orm.NewNaturalKeyBucket(storeKey, "allocations", cdc, []orm.Index{
 			{Name: IndexByReDAOMint, Indexer: func(key []byte, value interface{}) (indexValue []byte, err error) {
@@ -114,6 +114,10 @@ func (k Keeper) CreateReDAOMint(ctx sdk.Context, metadata ReDAOMintMetadata, fou
 		return nil, "", err
 	}
 	k.accountKeeper.SetAccount(ctx, &auth.BaseAccount{Address: addr})
+
+	fmt.Println(fmt.Sprintf("redaomint addr: %s", addr.String()))
+	ctx.Logger().With("module", ModuleName).Info(fmt.Sprintf("redaomint addr: %s", addr.String()))
+
 	return addr, Denom(addr), err
 }
 

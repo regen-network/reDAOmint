@@ -49,10 +49,9 @@ func GetCmdCreateReDAOMint(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{})
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
 	cmd.Flags().StringArrayVar(&creditClassStrs, "credit-class", nil, "set an approved credit class for the reDAOmint")
 	return cmd
 }
-
