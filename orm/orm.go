@@ -8,7 +8,6 @@ import (
 )
 
 type Bucket interface {
-	One(ctx sdk.Context, key []byte, dest interface{}) error
 	PrefixScan(ctx sdk.Context, start []byte, end []byte, reverse bool) (Iterator, error)
 	ByIndex(ctx sdk.Context, indexName string, key []byte) (Iterator, error)
 	ByIndexPrefixScan(ctx sdk.Context, indexName string, start []byte, end []byte, reverse bool) (Iterator, error)
@@ -17,6 +16,7 @@ type Bucket interface {
 
 type ExternalKeyBucket interface {
 	Bucket
+	GetOne(ctx sdk.Context, key []byte, dest interface{}) error
 	Save(ctx sdk.Context, key []byte, m interface{}) error
 	Delete(ctx sdk.Context, key []byte) error
 }
@@ -27,15 +27,16 @@ type HasID interface {
 
 type NaturalKeyBucket interface {
 	Bucket
+	GetOne(ctx sdk.Context, dest HasID) error
 	Save(ctx sdk.Context, value HasID) error
 	Delete(ctx sdk.Context, hasID HasID) error
 }
 
 type AutoIDBucket interface {
-	Bucket
+	ExternalKeyBucket
 
 	// Create auto-generates key
-	Create(ctx sdk.Context, m interface{}) ([]byte, error)
+	Create(ctx sdk.Context, value interface{}) ([]byte, error)
 }
 
 type Iterator interface {
@@ -74,7 +75,7 @@ type iterator struct {
 	it  sdk.Iterator
 }
 
-func (b bucket) One(ctx sdk.Context, key []byte, dest interface{}) error {
+func (b bucket) GetOne(ctx sdk.Context, key []byte, dest interface{}) error {
 	store := prefix.NewStore(ctx.KVStore(b.key), []byte(b.bucketPrefix))
 	bz := store.Get(key)
 	if len(bz) == 0 {

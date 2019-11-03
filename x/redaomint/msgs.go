@@ -1,6 +1,7 @@
 package redaomint
 
 import (
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gaia/x/ecocredit"
 )
@@ -8,37 +9,51 @@ import (
 type ReDAOMintMetadata struct {
 	Description           string                    `json:"description"`
 	ApprovedCreditClasses []ecocredit.CreditClassID `json:"credit_classes"`
+	TotalLandAllocations  sdk.Int                   `json:"total_land_allocations"`
 }
 
 type MsgCreateReDAOMint struct {
 	ReDAOMintMetadata
-	Sender sdk.AccAddress `json:"sender"`
+	Founder sdk.AccAddress `json:"founder"`
+	FounderShares sdk.Int `json:"founder_shares"`
 }
 
 type MsgMintShares struct {
+	ReDAOMint sdk.AccAddress `json:"re_dao_mint"`
+	Shares    sdk.Int        `json:"shares"`
+}
+
+type LandAllocation struct {
 	ReDAOMint   sdk.AccAddress `json:"re_dao_mint"`
-	Shares sdk.Int `json:"shares"`
+	LandSteward sdk.AccAddress `json:"land_steward"`
+	GeoPolygon  []byte         `json:"geo_polygon"`
+	Allocation  sdk.Int        `json:"allocation"`
 }
 
 type MsgAllocateLandShares struct {
-	ReDAOMint   sdk.AccAddress `json:"re_dao_mint"`
-	LandSteward sdk.AccAddress `json:"land_steward"`
-	// GeoPolygon in EWKB format
-	GeoPolygon []byte  `json:"geo_polygon"`
-	Allocation sdk.Dec `json:"allocation"`
+	LandAllocation
 }
 
-type MsgWithdrawCredits struct {
-	ReDAOMint   sdk.AccAddress
-	Shareholder sdk.AccAddress
+type MsgDistributeCredit struct {
+	ReDAOMint sdk.AccAddress
+	Credit    ecocredit.CreditID
 }
 
-type ProposalID uint64
+type MsgDistributeFunds struct {
+	ReDAOMint sdk.AccAddress
+	Funds     sdk.Coins
+}
 
-type MsgPropose struct {
-	Proposer  sdk.AccAddress `json:"proposer"`
+type ProposalID []byte
+
+type Proposal struct {
 	ReDAOMint sdk.AccAddress `json:"re_dao_mint"`
 	Msgs      []sdk.Msg      `json:"msgs"`
+	Proposer  sdk.AccAddress `json:"proposer"`
+}
+
+type MsgPropose struct {
+	Proposal
 }
 
 type MsgVote struct {
@@ -112,26 +127,6 @@ func (m MsgAllocateLandShares) GetSigners() []sdk.AccAddress {
 	panic("implement me")
 }
 
-func (m MsgWithdrawCredits) Route() string {
-	panic("implement me")
-}
-
-func (m MsgWithdrawCredits) Type() string {
-	panic("implement me")
-}
-
-func (m MsgWithdrawCredits) ValidateBasic() sdk.Error {
-	panic("implement me")
-}
-
-func (m MsgWithdrawCredits) GetSignBytes() []byte {
-	panic("implement me")
-}
-
-func (m MsgWithdrawCredits) GetSigners() []sdk.AccAddress {
-	panic("implement me")
-}
-
 func (m MsgPropose) Route() string {
 	panic("implement me")
 }
@@ -190,4 +185,8 @@ func (m MsgExecProposal) GetSignBytes() []byte {
 
 func (m MsgExecProposal) GetSigners() []sdk.AccAddress {
 	panic("implement me")
+}
+
+func (a LandAllocation) ID() []byte {
+	return []byte(fmt.Sprintf("%x/%x", a.ReDAOMint, a.GeoPolygon))
 }

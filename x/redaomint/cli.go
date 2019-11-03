@@ -44,7 +44,7 @@ func GetCmdCreateReDAOMint(cdc *codec.Codec) *cobra.Command {
 				creditClasses = append(creditClasses, bz)
 			}
 
-			msg := MsgCreateReDAOMint{ReDAOMintMetadata{args[0], creditClasses}, from}
+			msg := MsgCreateReDAOMint{ReDAOMintMetadata: ReDAOMintMetadata{Description: args[0], ApprovedCreditClasses: creditClasses}, Founder: from}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

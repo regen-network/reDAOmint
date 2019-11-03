@@ -16,10 +16,19 @@ type Keeper struct {
 	creditHoldingsBucket orm.NaturalKeyBucket
 }
 
+const (
+	IndexByGeoPolygon = "polygon"
+)
+
 func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey) Keeper {
 	return Keeper{cdc: cdc, storeKey: storeKey,
-		creditClassBucket:    orm.NewAutoIDBucket(storeKey, "credit-class", cdc, nil),
-		creditBucket:         orm.NewAutoIDBucket(storeKey, "credit", cdc, nil),
+		creditClassBucket: orm.NewAutoIDBucket(storeKey, "credit-class", cdc, nil),
+		creditBucket: orm.NewAutoIDBucket(storeKey, "credit", cdc, []orm.Index{
+			{IndexByGeoPolygon, func(key []byte, value interface{}) (indexValue []byte, err error) {
+				meta := value.(CreditMetadata)
+				return meta.GeoPolygon, nil
+			}},
+		}),
 		creditHoldingsBucket: orm.NewNaturalKeyBucket(storeKey, "credit-holdings", cdc, nil),
 	}
 }
@@ -63,8 +72,8 @@ func (k Keeper) IssueCredit(ctx sdk.Context, metadata CreditMetadata, holder sdk
 }
 
 func (k Keeper) SendCredit(ctx sdk.Context, credit CreditID, from sdk.AccAddress, to sdk.AccAddress, units sdk.Dec) error {
-	var holding CreditHolding
-	err := k.creditHoldingsBucket.One(ctx, CreditHolding{Credit: credit, Holder: from}.ID(), &holding)
+	holding := CreditHolding{Credit: credit, Holder: from}
+	err := k.creditHoldingsBucket.GetOne(ctx, &holding)
 	if err != nil {
 		return err
 	}
@@ -76,8 +85,8 @@ func (k Keeper) SendCredit(ctx sdk.Context, credit CreditID, from sdk.AccAddress
 	if err != nil {
 		return err
 	}
-	var holding2 CreditHolding
-	err = k.creditHoldingsBucket.One(ctx, CreditHolding{Credit: credit, Holder: to}.ID(), &holding2)
+	holding2 := CreditHolding{Credit: credit, Holder: to}
+	err = k.creditHoldingsBucket.GetOne(ctx, &holding2)
 	if err != nil {
 		err = k.creditHoldingsBucket.Save(ctx, CreditHolding{Credit: credit, Holder: to, LiquidUnits: units})
 		if err != nil {
@@ -91,8 +100,8 @@ func (k Keeper) SendCredit(ctx sdk.Context, credit CreditID, from sdk.AccAddress
 }
 
 func (k Keeper) BurnCredit(ctx sdk.Context, credit CreditID, holder sdk.AccAddress, units sdk.Dec) error {
-	var holding CreditHolding
-	err := k.creditHoldingsBucket.One(ctx, CreditHolding{Credit: credit, Holder: holder}.ID(), &holding)
+	holding := CreditHolding{Credit: credit, Holder: holder}
+	err := k.creditHoldingsBucket.GetOne(ctx, &holding)
 	if err != nil {
 		return err
 	}
@@ -105,13 +114,32 @@ func (k Keeper) BurnCredit(ctx sdk.Context, credit CreditID, holder sdk.AccAddre
 	if err != nil {
 		return err
 	}
+	// TODO update credit metadata
 	return nil
 }
 
 func (k Keeper) GetCreditHolding(ctx sdk.Context, credit CreditID, holder sdk.AccAddress) (holding CreditHolding, found bool) {
-	err := k.creditHoldingsBucket.One(ctx, CreditHolding{Credit: credit, Holder: holder}.ID(), &holding)
+	holding = CreditHolding{Credit: credit, Holder: holder}
+	err := k.creditHoldingsBucket.GetOne(ctx, &holding)
 	if err != nil {
 		return holding, false
 	}
 	return holding, true
+}
+
+func (k Keeper) IteratorCreditsByGeoPolygon(ctx sdk.Context, geoPolygon []byte, callback func(metadata CreditMetadata) (stop bool)) {
+	iterator, err := k.creditBucket.ByIndex(ctx, IndexByGeoPolygon, geoPolygon)
+	if err != nil {
+		return
+	}
+	for {
+		var metadata CreditMetadata
+		_, err = iterator.LoadNext(&metadata)
+		if err != nil {
+			break
+		}
+		if callback(metadata) {
+			return
+		}
+	}
 }

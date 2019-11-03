@@ -196,7 +196,7 @@ func NewGaiaApp(
 	app.ibcKeeper = ibc.NewKeeper(app.cdc, keys[ibc.StoreKey], ibc.DefaultCodespace, app.bankKeeper, app.supplyKeeper)
 
 	app.ecocreditKeeper = ecocredit.NewKeeper(cdc, keys[ecocredit.StoreKey])
-	app.redaomintKeeper = redaomint.NewKeeper(cdc, keys[redaomint.StoreKey], app.accountKeeper, app.bankKeeper, app.supplyKeeper, app.ecocreditKeeper, app.ibcKeeper)
+	app.redaomintKeeper = redaomint.NewKeeper(cdc, keys[redaomint.StoreKey], app.accountKeeper, app.bankKeeper, app.supplyKeeper, app.ecocreditKeeper, app.ibcKeeper, app.Router())
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
