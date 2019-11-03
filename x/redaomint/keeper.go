@@ -5,6 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/exported"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/ibc"
 	"github.com/cosmos/cosmos-sdk/x/supply"
@@ -50,5 +51,40 @@ func (k Keeper) MintShares(ctx sdk.Context, redaomint sdk.AccAddress, shares sdk
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (k Keeper) WithdrawCredits(ctx sdk.Context, redaomint sdk.AccAddress, shareholder sdk.AccAddress) error {
+	// NOTE: this is a hacky and incorrect way of determining a share at the time of withdraw,
+	// but in order to have something more correct, the bank module would need to track the holders
+	// of a single coin and possible allow access to historical balances
+	denom := Denom(redaomint)
+	coins := k.bankKeeper.GetCoins(ctx, shareholder).AmountOf(denom)
+	totalCoins := k.supplyKeeper.GetSupply(ctx).GetTotal().AmountOf(denom)
+	var share sdk.Dec
+	share.Div(coins.BigInt(), totalCoins.BigInt())
+	return nil
+}
+
+func (k Keeper) DistributeCredit(ctx sdk.Context, redaomint sdk.AccAddress, credit ecocredit.CreditID) error {
+	holding, found := k.ecocreditKeeper.GetCreditHolding(ctx, credit, redaomint)
+	if !found {
+		return fmt.Errorf("not found")
+	}
+	denom := Denom(redaomint)
+	totalCoins := k.supplyKeeper.GetSupply(ctx).GetTotal().AmountOf(denom)
+	k.accountKeeper.IterateAccounts(ctx, func(account exported.Account) (stop bool) {
+		coins := account.GetCoins().AmountOf(denom)
+		var share sdk.Dec
+		share.Div(coins.BigInt(), totalCoins.BigInt())
+		units := holding.LiquidUnits.Mul(share)
+		if units.IsPositive() {
+			err := k.ecocreditKeeper.SendCredit(ctx, credit, redaomint, account.GetAddress(), units)
+			if err != nil {
+				return err
+			}
+		}
+		return false
+	})
 	return nil
 }

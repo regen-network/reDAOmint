@@ -107,3 +107,11 @@ func (k Keeper) BurnCredit(ctx sdk.Context, credit CreditID, holder sdk.AccAddre
 	}
 	return nil
 }
+
+func (k Keeper) GetCreditHolding(ctx sdk.Context, credit CreditID, holder sdk.AccAddress) (holding CreditHolding, found bool) {
+	err := k.creditHoldingsBucket.One(ctx, CreditHolding{Credit: credit, Holder: holder}.ID(), &holding)
+	if err != nil {
+		return holding, false
+	}
+	return holding, true
+}

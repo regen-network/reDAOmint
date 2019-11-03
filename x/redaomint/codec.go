@@ -6,6 +6,9 @@ import (
 
 // RegisterCodec registers the account types and interface
 func RegisterCodec(cdc *codec.Codec) {
+	cdc.RegisterConcrete(MsgCreateReDAOMint{}, "redaomint/MsgCreateReDAOMint", nil)
+	cdc.RegisterConcrete(MsgMintShares{}, "redaomint/MsgMintShares", nil)
+	cdc.RegisterConcrete(MsgAllocateLandShares{}, "redaomint/MsgAllocateLandShares", nil)
 }
 
 // ModuleCdc generic sealed codec to be used throughout module
