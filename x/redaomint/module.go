@@ -4,18 +4,19 @@ import (
 	"encoding/json"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 const (
-	ModuleName = "redaomint"
-	StoreKey = ModuleName
-	RouterKey = ModuleName
-	QuerierRoute = ModuleName
+	ModuleName       = "redaomint"
+	StoreKey         = ModuleName
+	RouterKey        = ModuleName
+	QuerierRoute     = ModuleName
+	DefaultCodespace = ModuleName
 )
 
 var (

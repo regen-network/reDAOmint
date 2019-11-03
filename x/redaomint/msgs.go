@@ -14,8 +14,8 @@ type ReDAOMintMetadata struct {
 
 type MsgCreateReDAOMint struct {
 	ReDAOMintMetadata
-	Founder sdk.AccAddress `json:"founder"`
-	FounderShares sdk.Int `json:"founder_shares"`
+	Founder       sdk.AccAddress `json:"founder"`
+	FounderShares sdk.Int        `json:"founder_shares"`
 }
 
 type MsgMintShares struct {
@@ -68,31 +68,39 @@ type MsgExecProposal struct {
 }
 
 func (m MsgCreateReDAOMint) Route() string {
-	panic("implement me")
+	return RouterKey
 }
 
 func (m MsgCreateReDAOMint) Type() string {
-	panic("implement me")
+	return "create-redaomint"
 }
 
 func (m MsgCreateReDAOMint) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if m.Founder.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+	if !m.FounderShares.IsPositive() {
+		return sdk.ErrUnknownRequest("invalid founder shares")
+	}
+
+	return nil
 }
 
 func (m MsgCreateReDAOMint) GetSignBytes() []byte {
-	panic("implement me")
+	bz := ModuleCdc.MustMarshalJSON(m)
+	return sdk.MustSortJSON(bz)
 }
 
 func (m MsgCreateReDAOMint) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+	return []sdk.AccAddress{m.Founder}
 }
 
 func (m MsgMintShares) Route() string {
-	panic("implement me")
+	return RouterKey
 }
 
 func (m MsgMintShares) Type() string {
-	panic("implement me")
+	return "mint-shares"
 }
 
 func (m MsgMintShares) ValidateBasic() sdk.Error {
@@ -100,91 +108,132 @@ func (m MsgMintShares) ValidateBasic() sdk.Error {
 }
 
 func (m MsgMintShares) GetSignBytes() []byte {
-	panic("implement me")
+	bz := ModuleCdc.MustMarshalJSON(m)
+	return sdk.MustSortJSON(bz)
 }
 
 func (m MsgMintShares) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+	return []sdk.AccAddress{m.ReDAOMint}
 }
 
 func (m MsgAllocateLandShares) Route() string {
-	panic("implement me")
+	return RouterKey
 }
 
 func (m MsgAllocateLandShares) Type() string {
-	panic("implement me")
+	return "allocate-landshares"
 }
 
 func (m MsgAllocateLandShares) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if m.ReDAOMint.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+	if m.LandSteward.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+	if !(len(m.GeoPolygon) > 0) {
+		return sdk.ErrUnknownRequest("invalid geo polygon")
+	}
+	if !m.Allocation.IsPositive() {
+		return sdk.ErrUnknownRequest("invalid allocation")
+	}
+
+	return nil
 }
 
 func (m MsgAllocateLandShares) GetSignBytes() []byte {
-	panic("implement me")
+	bz := ModuleCdc.MustMarshalJSON(m)
+	return sdk.MustSortJSON(bz)
 }
 
 func (m MsgAllocateLandShares) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+	return []sdk.AccAddress{m.ReDAOMint, m.LandSteward}
 }
 
 func (m MsgPropose) Route() string {
-	panic("implement me")
+	return RouterKey
 }
 
 func (m MsgPropose) Type() string {
-	panic("implement me")
+	return "propose"
 }
 
 func (m MsgPropose) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if m.ReDAOMint.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+	if !(len(m.Msgs) > 0) {
+		return sdk.ErrUnknownRequest("invalid number of messages")
+	}
+	if m.Proposer.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+
+	return nil
 }
 
 func (m MsgPropose) GetSignBytes() []byte {
-	panic("implement me")
+	bz := ModuleCdc.MustMarshalJSON(m)
+	return sdk.MustSortJSON(bz)
 }
 
 func (m MsgPropose) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+	return []sdk.AccAddress{m.Proposer, m.ReDAOMint}
 }
 
 func (m MsgVote) Route() string {
-	panic("implement me")
+	return RouterKey
 }
 
 func (m MsgVote) Type() string {
-	panic("implement me")
+	return "vote"
 }
 
 func (m MsgVote) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if !(len(m.ProposalID) > 0) {
+		return sdk.ErrUnknownRequest("invalid proposal id")
+	}
+	if m.Voter.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+	return nil
 }
 
 func (m MsgVote) GetSignBytes() []byte {
-	panic("implement me")
+	bz := ModuleCdc.MustMarshalJSON(m)
+	return sdk.MustSortJSON(bz)
 }
 
 func (m MsgVote) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+	return []sdk.AccAddress{m.Voter}
 }
 
 func (m MsgExecProposal) Route() string {
-	panic("implement me")
+	return RouterKey
 }
 
 func (m MsgExecProposal) Type() string {
-	panic("implement me")
+	return "exec-proposal"
 }
 
 func (m MsgExecProposal) ValidateBasic() sdk.Error {
-	panic("implement me")
+	if !(len(m.ProposalID) > 0) {
+		return sdk.ErrUnknownRequest("invalid proposal id")
+	}
+	if m.Signer.Empty() {
+		return sdk.ErrInvalidAddress(DefaultCodespace)
+	}
+
+	return nil
 }
 
 func (m MsgExecProposal) GetSignBytes() []byte {
-	panic("implement me")
+	bz := ModuleCdc.MustMarshalJSON(m)
+	return sdk.MustSortJSON(bz)
 }
 
 func (m MsgExecProposal) GetSigners() []sdk.AccAddress {
-	panic("implement me")
+	return []sdk.AccAddress{m.Signer}
 }
 
 func (a LandAllocation) ID() []byte {
