@@ -97,7 +97,7 @@ func GetCmdIssueCredit(cdc *codec.Codec) *cobra.Command {
 				GeoPolygon:  []byte(args[1]),
 				StartDate:   startDate,
 				EndDate:     endDate,
-				Units:       units,
+				LiquidUnits: units,
 			},
 				holder,
 			}

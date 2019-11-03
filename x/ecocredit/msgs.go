@@ -24,16 +24,17 @@ type MsgCreateCreditClass struct {
 type CreditClassID []byte
 
 type CreditMetadata struct {
-	Issuer sdk.AccAddress `json:"issuer"`
-	CreditClass CreditClassID `json:"credit_class"`
-	GeoPolygon     []byte `json:"geo_polygon"`
-	StartDate   time.Time `json:"start_date"`
-	EndDate     time.Time `json:"end_date"`
-	// Units specifies how many total units of this credit are issued for this polygon
-	Units  sdk.Dec `json:"units"`
+	Issuer      sdk.AccAddress `json:"issuer"`
+	CreditClass CreditClassID  `json:"credit_class"`
+	GeoPolygon  []byte         `json:"geo_polygon"`
+	StartDate   time.Time      `json:"start_date"`
+	EndDate     time.Time      `json:"end_date"`
+	// LiquidUnits specifies how many total units of this credit are issued for this polygon
+	LiquidUnits sdk.Dec `json:"liquid_units"`
+	BurnedUnits sdk.Dec `json:"burned_units"`
 }
 
-// MsgIssueCredit issues a credit to the Holder with the number of Units provided
+// MsgIssueCredit issues a credit to the Holder with the number of LiquidUnits provided
 // for the provided credit class, polygon, and start and end dates. A new CreditID
 // is returned. It is illegal to issue a credit where the provided polygon and dates
 // overlaps with those of an existing credit of the same class
@@ -145,4 +146,3 @@ func (m MsgBurnCredit) GetSignBytes() []byte {
 func (m MsgBurnCredit) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{m.Holder}
 }
-

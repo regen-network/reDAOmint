@@ -72,6 +72,7 @@ var (
 		staking.NotBondedPoolName:          {supply.Burner, supply.Staking},
 		gov.ModuleName:                     {supply.Burner},
 		ibctransfer.GetModuleAccountName(): {supply.Minter, supply.Burner},
+		redaomint.ModuleName:               {supply.Minter},
 	}
 )
 
@@ -101,17 +102,17 @@ type GaiaApp struct {
 	tkeys map[string]*sdk.TransientStoreKey
 
 	// keepers
-	accountKeeper  auth.AccountKeeper
-	bankKeeper     bank.Keeper
-	supplyKeeper   supply.Keeper
-	stakingKeeper  staking.Keeper
-	slashingKeeper slashing.Keeper
-	mintKeeper     mint.Keeper
-	distrKeeper    distr.Keeper
-	govKeeper      gov.Keeper
-	crisisKeeper   crisis.Keeper
-	paramsKeeper   params.Keeper
-	ibcKeeper      ibc.Keeper
+	accountKeeper   auth.AccountKeeper
+	bankKeeper      bank.Keeper
+	supplyKeeper    supply.Keeper
+	stakingKeeper   staking.Keeper
+	slashingKeeper  slashing.Keeper
+	mintKeeper      mint.Keeper
+	distrKeeper     distr.Keeper
+	govKeeper       gov.Keeper
+	crisisKeeper    crisis.Keeper
+	paramsKeeper    params.Keeper
+	ibcKeeper       ibc.Keeper
 	ecocreditKeeper ecocredit.Keeper
 	redaomintKeeper redaomint.Keeper
 
@@ -195,7 +196,7 @@ func NewGaiaApp(
 	app.ibcKeeper = ibc.NewKeeper(app.cdc, keys[ibc.StoreKey], ibc.DefaultCodespace, app.bankKeeper, app.supplyKeeper)
 
 	app.ecocreditKeeper = ecocredit.NewKeeper(cdc, keys[ecocredit.StoreKey])
-	app.redaomintKeeper = redaomint.NewKeeper(cdc, keys[redaomint.StoreKey], app.accountKeeper, app.bankKeeper, app.ecocreditKeeper, app.ibcKeeper)
+	app.redaomintKeeper = redaomint.NewKeeper(cdc, keys[redaomint.StoreKey], app.accountKeeper, app.bankKeeper, app.supplyKeeper, app.ecocreditKeeper, app.ibcKeeper)
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.

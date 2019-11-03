@@ -19,7 +19,6 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 
 	txCmd.AddCommand(client.PostCommands(
 		GetCmdCreateReDAOMint(cdc),
-		GetCmdContributeReDAOMint(cdc),
 	)...)
 
 	return txCmd
@@ -57,33 +56,3 @@ func GetCmdCreateReDAOMint(cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-func GetCmdContributeReDAOMint(cdc *codec.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "contribute [redaomint] [funds]",
-		Args:  cobra.ExactArgs(2),
-		Short: "contribute to a ReDAOMint",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			from := cliCtx.GetFromAddress()
-
-			addr, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return err
-			}
-
-			coins, err := sdk.ParseCoins(args[1])
-			if err != nil {
-				return err
-			}
-
-			msg := MsgContributeReDAOMint{Sender: from, ReDAOMint: addr, Funds: coins}
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{})
-		},
-	}
-	return cmd
-}

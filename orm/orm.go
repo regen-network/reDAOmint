@@ -12,9 +12,23 @@ type Bucket interface {
 	PrefixScan(ctx sdk.Context, start []byte, end []byte, reverse bool) (Iterator, error)
 	ByIndex(ctx sdk.Context, indexName string, key []byte) (Iterator, error)
 	ByIndexPrefixScan(ctx sdk.Context, indexName string, start []byte, end []byte, reverse bool) (Iterator, error)
+	Has(ctx sdk.Context, key []byte) (bool, error)
+}
+
+type ExternalKeyBucket interface {
+	Bucket
 	Save(ctx sdk.Context, key []byte, m interface{}) error
 	Delete(ctx sdk.Context, key []byte) error
-	Has(ctx sdk.Context, key []byte) (bool, error)
+}
+
+type HasID interface {
+	ID() []byte
+}
+
+type NaturalKeyBucket interface {
+	Bucket
+	Save(ctx sdk.Context, value HasID) error
+	Delete(ctx sdk.Context, hasID HasID) error
 }
 
 type AutoIDBucket interface {
@@ -43,8 +57,12 @@ type Index struct {
 	Indexer Indexer
 }
 
-func NewBucket(key sdk.StoreKey, bucketPrefix string, cdc *codec.Codec, indexes []Index) Bucket {
-	return &bucket{key: key, bucketPrefix: bucketPrefix, cdc: cdc, indexes: indexes}
+func NewExternalKeyBucket(key sdk.StoreKey, bucketPrefix string, cdc *codec.Codec, indexes []Index) ExternalKeyBucket {
+	panic("TODO")
+}
+
+func NewNaturalKeyBucket(key sdk.StoreKey, bucketPrefix string, cdc *codec.Codec, indexes []Index) NaturalKeyBucket {
+	panic("TODO")
 }
 
 func NewAutoIDBucket(key sdk.StoreKey, bucketPrefix string, cdc *codec.Codec, indexes []Index) AutoIDBucket {

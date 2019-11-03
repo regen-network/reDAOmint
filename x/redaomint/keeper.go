@@ -7,22 +7,28 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/ibc"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/cosmos/gaia/orm"
 	"github.com/cosmos/gaia/x/ecocredit"
 )
 
 type Keeper struct {
-	cdc      *codec.Codec
-	storeKey sdk.StoreKey
-	accountKeeper auth.AccountKeeper
-	bankKeeper bank.Keeper
+	cdc             *codec.Codec
+	storeKey        sdk.StoreKey
+	accountKeeper   auth.AccountKeeper
+	bankKeeper      bank.Keeper
+	supplyKeeper    supply.Keeper
 	ecocreditKeeper ecocredit.Keeper
-	ibcKeeper ibc.Keeper
-	metadataBucket orm.AutoIDBucket
+	ibcKeeper       ibc.Keeper
+	metadataBucket  orm.AutoIDBucket
 }
 
-func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, accountKeeper auth.AccountKeeper, bankKeeper bank.Keeper, ecocreditKeeper ecocredit.Keeper, ibcKeeper ibc.Keeper) Keeper {
-	return Keeper{cdc: cdc, storeKey: storeKey, accountKeeper: accountKeeper, bankKeeper: bankKeeper, ecocreditKeeper: ecocreditKeeper, ibcKeeper: ibcKeeper}
+func NewKeeper(cdc *codec.Codec, storeKey sdk.StoreKey, accountKeeper auth.AccountKeeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper, ecocreditKeeper ecocredit.Keeper, ibcKeeper ibc.Keeper) Keeper {
+	return Keeper{cdc: cdc, storeKey: storeKey, accountKeeper: accountKeeper, bankKeeper: bankKeeper, supplyKeeper: supplyKeeper, ecocreditKeeper: ecocreditKeeper, ibcKeeper: ibcKeeper}
+}
+
+func Denom(redaomint sdk.AccAddress) string {
+	return fmt.Sprintf("redao:%x", redaomint)
 }
 
 func (k Keeper) CreateReDAOMint(ctx sdk.Context, metadata ReDAOMintMetadata) (addr sdk.AccAddress, denom string, err error) {
@@ -30,17 +36,19 @@ func (k Keeper) CreateReDAOMint(ctx sdk.Context, metadata ReDAOMintMetadata) (ad
 	if err != nil {
 		return nil, "", err
 	}
-	k.accountKeeper.SetAccount(ctx, &auth.BaseAccount{Address:addr})
-	return addr, fmt.Sprintf("redao:%x", addr), err
+	k.accountKeeper.SetAccount(ctx, &auth.BaseAccount{Address: addr})
+	return addr, Denom(addr), err
 }
 
-func (k Keeper) ContributeReDAOMint(ctx sdk.Context, contributor sdk.AccAddress, redaomint sdk.AccAddress, funds sdk.Coins, priceInfo []byte) (sdk.Coins, sdk.Error) {
-	err := k.bankKeeper.SendCoins(ctx, contributor, redaomint, funds)
+func (k Keeper) MintShares(ctx sdk.Context, redaomint sdk.AccAddress, shares sdk.Int) error {
+	coins := sdk.Coins{sdk.Coin{Denom: Denom(redaomint), Amount: shares}}
+	err := k.supplyKeeper.MintCoins(ctx, ModuleName, coins)
 	if err != nil {
-		return sdk.Coins{}, err
+		return err
 	}
-	// Use this to verify price info
-	// k.ibcConnKeeper.VerifyMembership(ctx,)
-	panic("TODO: mint redaomint shares")
+	_, err = k.bankKeeper.AddCoins(ctx, redaomint, coins)
+	if err != nil {
+		return err
+	}
+	return nil
 }
-

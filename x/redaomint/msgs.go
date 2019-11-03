@@ -15,11 +15,9 @@ type MsgCreateReDAOMint struct {
 	Sender sdk.AccAddress `json:"sender"`
 }
 
-type MsgContributeReDAOMint struct {
-	Sender    sdk.AccAddress `json:"sender"`
-	ReDAOMint sdk.AccAddress `json:"re_dao_mint"`
-	Funds     sdk.Coins      `json:"funds"`
-	PriceInfo []byte         `json:"price_info"`
+type MsgMintShares struct {
+	ReDAOMint   sdk.AccAddress `json:"re_dao_mint"`
+	Shares sdk.Int `json:"shares"`
 }
 
 type MsgAllocateLandShares struct {
@@ -74,23 +72,23 @@ func (m MsgCreateReDAOMint) GetSigners() []sdk.AccAddress {
 	panic("implement me")
 }
 
-func (m MsgContributeReDAOMint) Route() string {
+func (m MsgMintShares) Route() string {
 	panic("implement me")
 }
 
-func (m MsgContributeReDAOMint) Type() string {
+func (m MsgMintShares) Type() string {
 	panic("implement me")
 }
 
-func (m MsgContributeReDAOMint) ValidateBasic() sdk.Error {
+func (m MsgMintShares) ValidateBasic() sdk.Error {
 	panic("implement me")
 }
 
-func (m MsgContributeReDAOMint) GetSignBytes() []byte {
+func (m MsgMintShares) GetSignBytes() []byte {
 	panic("implement me")
 }
 
-func (m MsgContributeReDAOMint) GetSigners() []sdk.AccAddress {
+func (m MsgMintShares) GetSigners() []sdk.AccAddress {
 	panic("implement me")
 }
 

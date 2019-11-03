@@ -12,12 +12,9 @@ func NewHandler(k Keeper) sdk.Handler {
 		case MsgCreateReDAOMint:
 			_, _, err :=k.CreateReDAOMint(ctx, msg.ReDAOMintMetadata)
 			return sdk.ResultFromError(err)
-		case MsgContributeReDAOMint:
-			_, err := k.ContributeReDAOMint(ctx, msg.Sender, msg.ReDAOMint, msg.Funds, msg.PriceInfo)
-			if err != nil {
-				return err.Result()
-			}
-			return sdk.Result{}
+		case MsgMintShares:
+			err := k.MintShares(ctx, msg.ReDAOMint, msg.Shares)
+			return sdk.ResultFromError(err)
 		case MsgAllocateLandShares:
 			return sdk.Result{}
 		case MsgWithdrawCredits:
