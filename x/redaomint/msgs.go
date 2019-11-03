@@ -79,9 +79,9 @@ func (m MsgCreateReDAOMint) ValidateBasic() sdk.Error {
 	if m.Founder.Empty() {
 		return sdk.ErrInvalidAddress(DefaultCodespace)
 	}
-	if !m.FounderShares.IsPositive() {
-		return sdk.ErrUnknownRequest("invalid founder shares")
-	}
+	// if !m.FounderShares.IsPositive() {
+	// 	return sdk.ErrUnknownRequest("invalid founder shares")
+	// }
 
 	return nil
 }

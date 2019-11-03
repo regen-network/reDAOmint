@@ -1,20 +1,20 @@
 package ecocredit
 
 import (
-"encoding/json"
-"github.com/cosmos/cosmos-sdk/client/context"
-"github.com/cosmos/cosmos-sdk/codec"
-"github.com/cosmos/cosmos-sdk/types/module"
-"github.com/gorilla/mux"
-"github.com/spf13/cobra"
-sdk "github.com/cosmos/cosmos-sdk/types"
-abci "github.com/tendermint/tendermint/abci/types"
+	"encoding/json"
+	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/gorilla/mux"
+	"github.com/spf13/cobra"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 const (
-	ModuleName = "ecocredit"
-	StoreKey = ModuleName
-	RouterKey = ModuleName
+	ModuleName   = "ecocredit"
+	StoreKey     = ModuleName
+	RouterKey    = ModuleName
 	QuerierRoute = ModuleName
 )
 
@@ -54,9 +54,8 @@ func (AppModuleBasic) RegisterRESTRoutes(ctx context.CLIContext, rtr *mux.Router
 }
 
 // GetTxCmd returns the root tx command for the fee_grant module.
-func (AppModuleBasic) GetTxCmd(_ *codec.Codec) *cobra.Command {
-	// TODO
-	return nil
+func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
+	return GetTxCmd(StoreKey, cdc)
 }
 
 // GetQueryCmd returns no root query command for the fee_grant module.
