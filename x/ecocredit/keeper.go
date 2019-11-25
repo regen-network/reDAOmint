@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gaia/orm"
+	"github.com/cosmos/gaia/x/ledger"
 )
 
 type Keeper struct {
@@ -81,7 +82,7 @@ func (k Keeper) IssueCredit(ctx sdk.Context, metadata CreditMetadata, holder sdk
 // SendCredit sends fractional units of a credit from one account to another account
 func (k Keeper) SendCredit(ctx sdk.Context, credit CreditID, from sdk.AccAddress, to sdk.AccAddress, units sdk.Dec) error {
 	holding := CreditHolding{Credit: credit, Holder: from}
-	err := k.creditHoldingsBucket.GetOne(ctx, &holding)
+	err := k.creditHoldingsBucket.GetOne(ctx, holding.ID(), &holding)
 	if err != nil {
 		return err
 	}
@@ -94,7 +95,7 @@ func (k Keeper) SendCredit(ctx sdk.Context, credit CreditID, from sdk.AccAddress
 		return err
 	}
 	holding2 := CreditHolding{Credit: credit, Holder: to}
-	err = k.creditHoldingsBucket.GetOne(ctx, &holding2)
+	err = k.creditHoldingsBucket.GetOne(ctx, holding2.ID(), &holding2)
 	if err != nil {
 		err = k.creditHoldingsBucket.Save(ctx, CreditHolding{Credit: credit, Holder: to, LiquidUnits: units})
 		if err != nil {
@@ -113,7 +114,7 @@ func (k Keeper) SendCredit(ctx sdk.Context, credit CreditID, from sdk.AccAddress
 // So basically "burning" credits corresponds to the actual usage of ecosystem services.
 func (k Keeper) BurnCredit(ctx sdk.Context, credit CreditID, holder sdk.AccAddress, units sdk.Dec) error {
 	holding := CreditHolding{Credit: credit, Holder: holder}
-	err := k.creditHoldingsBucket.GetOne(ctx, &holding)
+	err := k.creditHoldingsBucket.GetOne(ctx, holding.ID(), &holding)
 	if err != nil {
 		return err
 	}
@@ -133,7 +134,7 @@ func (k Keeper) BurnCredit(ctx sdk.Context, credit CreditID, holder sdk.AccAddre
 // GetCreditHolding gets the holdings of a specific credit by a specific holder
 func (k Keeper) GetCreditHolding(ctx sdk.Context, credit CreditID, holder sdk.AccAddress) (holding CreditHolding, found bool) {
 	holding = CreditHolding{Credit: credit, Holder: holder}
-	err := k.creditHoldingsBucket.GetOne(ctx, &holding)
+	err := k.creditHoldingsBucket.GetOne(ctx, holding.ID(), &holding)
 	if err != nil {
 		return holding, false
 	}
@@ -161,4 +162,44 @@ func (k Keeper) IterateCreditsByGeoPolygon(ctx sdk.Context, geoPolygon []byte, c
 			return
 		}
 	}
+}
+
+type CreditManager struct {
+
+}
+
+func (c CreditManager) GetAsset() ledger.AssetID {
+	panic("implement me")
+}
+
+func (c CreditManager) GetAuthority() ledger.Authority {
+	panic("implement me")
+}
+
+func (c CreditManager) GetModule() ledger.Module {
+	panic("implement me")
+}
+
+func (c CreditManager) GetName() string {
+	panic("implement me")
+}
+
+func (c CreditManager) GetBalance(ctx sdk.Context, acc sdk.Address) ledger.Dec {
+	panic("implement me")
+}
+
+func (c CreditManager) Transfer(ctx sdk.Context, from sdk.AccAddress, to sdk.AccAddress, amount ledger.Dec) error {
+	panic("implement me")
+}
+
+func (c CreditManager) GetSupply() ledger.Dec {
+	panic("implement me")
+}
+
+func (c CreditManager) Burn(ctx sdk.Context, acc sdk.AccAddress, amount ledger.Dec) error {
+	panic("implement me")
+}
+
+func (k Keeper) GetAssetManager(ctx sdk.Context, asset ledger.AssetID) ledger.NativeAssetManager {
+	return CreditManager{k, asset}
 }

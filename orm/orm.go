@@ -15,28 +15,32 @@ import (
 	"strings"
 )
 
+type HasKVStore interface {
+	KVStore(key sdk.StoreKey) sdk.KVStore
+}
+
 // BucketBase provides methods shared by all buckets
 type BucketBase interface {
+	// GetOne deserializes the value at the given key into the pointer passed as dest
+	GetOne(ctx HasKVStore, key []byte, dest interface{}) error
 	// Has checks if key is in the bucket
-	Has(ctx sdk.Context, key []byte) (bool, error)
+	Has(ctx HasKVStore, key []byte) (bool, error)
 	// PrefixScan returns an iterator between the start and end keys for the bucket
-	PrefixScan(ctx sdk.Context, start []byte, end []byte, reverse bool) (Iterator, error)
+	PrefixScan(ctx HasKVStore, start []byte, end []byte, reverse bool) (Iterator, error)
 	// ByIndex returns an iterator that returns objects in the bucket with the given index key
-	ByIndex(ctx sdk.Context, indexName string, key []byte) (Iterator, error)
+	ByIndex(ctx HasKVStore, indexName string, key []byte) (Iterator, error)
 	// ByIndex returns an iterator that returns objects in the bucket with index keys between start and end. Start and
 	// end can be set to nil to iterator through all values
-	ByIndexPrefixScan(ctx sdk.Context, indexName string, start []byte, end []byte, reverse bool) (Iterator, error)
+	ByIndexPrefixScan(ctx HasKVStore, indexName string, start []byte, end []byte, reverse bool) (Iterator, error)
+	// Delete deletes the value at the given key
+	Delete(ctx HasKVStore, key []byte) error
 }
 
 // ExternalKeyBucket defines a bucket where the key is stored externally to the value object
 type ExternalKeyBucket interface {
 	BucketBase
-	// GetOne deserializes the value at the given key into the pointer passed as dest
-	GetOne(ctx sdk.Context, key []byte, dest interface{}) error
 	// Save saves the given key value pair
-	Save(ctx sdk.Context, key []byte, value interface{}) error
-	// Delete deletes the value at the given key
-	Delete(ctx sdk.Context, key []byte) error
+	Save(ctx HasKVStore, key []byte, value interface{}) error
 }
 
 type HasID interface {
@@ -47,13 +51,8 @@ type HasID interface {
 // returned by the HasID method
 type NaturalKeyBucket interface {
 	BucketBase
-	// GetOne deserializes the value into the pointer passed as dest, with the key calculated from the pointers
-	// current valeu
-	GetOne(ctx sdk.Context, dest HasID) error
 	// Save saves the value passed in
-	Save(ctx sdk.Context, value HasID) error
-	// Delete deletes any value with a key corresponding the the ID of the hasID struct passed in
-	Delete(ctx sdk.Context, hasID HasID) error
+	Save(ctx HasKVStore, value HasID) error
 }
 
 // Indexer specifies a function that takes a key value pair and returns the index key for the given index
@@ -69,7 +68,7 @@ type AutoIDBucket interface {
 	ExternalKeyBucket
 
 	// Create auto-generates key
-	Create(ctx sdk.Context, value interface{}) ([]byte, error)
+	Create(ctx HasKVStore, value interface{}) ([]byte, error)
 }
 
 // Iterator allows iteration through a sequence of key value pairs
@@ -88,7 +87,7 @@ type bucketBase struct {
 	indexes      []Index
 }
 
-func (b bucketBase) getOne(ctx sdk.Context, key []byte, dest interface{}) error {
+func (b bucketBase) getOne(ctx HasKVStore, key []byte, dest interface{}) error {
 	store := prefix.NewStore(ctx.KVStore(b.key), []byte(b.bucketPrefix))
 	bz := store.Get(key)
 	if len(bz) == 0 {
@@ -97,15 +96,15 @@ func (b bucketBase) getOne(ctx sdk.Context, key []byte, dest interface{}) error 
 	return b.cdc.UnmarshalBinaryBare(bz, dest)
 }
 
-func (b bucketBase) GetOne(ctx sdk.Context, key []byte, dest interface{}) error {
+func (b bucketBase) GetOne(ctx HasKVStore, key []byte, dest interface{}) error {
 	return b.getOne(ctx, key, dest)
 }
 
-func (b bucketBase) rootStore(ctx sdk.Context) prefix.Store {
+func (b bucketBase) rootStore(ctx HasKVStore) prefix.Store {
 	return prefix.NewStore(ctx.KVStore(b.key), []byte(b.bucketPrefix))
 }
 
-func (b bucketBase) PrefixScan(ctx sdk.Context, start []byte, end []byte, reverse bool) (Iterator, error) {
+func (b bucketBase) PrefixScan(ctx HasKVStore, start []byte, end []byte, reverse bool) (Iterator, error) {
 	st := b.rootStore(ctx)
 	if reverse {
 		it := st.ReverseIterator(start, end)
@@ -116,17 +115,17 @@ func (b bucketBase) PrefixScan(ctx sdk.Context, start []byte, end []byte, revers
 	}
 }
 
-func (b bucketBase) indexStore(ctx sdk.Context, indexName string) prefix.Store {
+func (b bucketBase) indexStore(ctx HasKVStore, indexName string) prefix.Store {
 	return prefix.NewStore(ctx.KVStore(b.key), []byte(fmt.Sprintf("%s/%s", b.bucketPrefix, indexName)))
 }
 
-func (b bucketBase) ByIndex(ctx sdk.Context, indexName string, key []byte) (Iterator, error) {
+func (b bucketBase) ByIndex(ctx HasKVStore, indexName string, key []byte) (Iterator, error) {
 	st := b.indexStore(ctx, indexName)
 	it := st.Iterator(key, nil)
 	return &indexIterator{b, ctx, it, key, key}, nil
 }
 
-func (b bucketBase) ByIndexPrefixScan(ctx sdk.Context, indexName string, start []byte, end []byte, reverse bool) (Iterator, error) {
+func (b bucketBase) ByIndexPrefixScan(ctx HasKVStore, indexName string, start []byte, end []byte, reverse bool) (Iterator, error) {
 	st := b.indexStore(ctx, indexName)
 	if reverse {
 		it := st.ReverseIterator(start, end)
@@ -150,7 +149,7 @@ func NewExternalKeyBucket(key sdk.StoreKey, bucketPrefix string, cdc *codec.Code
 	}}
 }
 
-func (b bucketBase) save(ctx sdk.Context, key []byte, value interface{}) error {
+func (b bucketBase) save(ctx HasKVStore, key []byte, value interface{}) error {
 	rootStore := b.rootStore(ctx)
 	bz, err := b.cdc.MarshalBinaryBare(value)
 	if err != nil {
@@ -167,22 +166,18 @@ func (b bucketBase) save(ctx sdk.Context, key []byte, value interface{}) error {
 	}
 	return nil
 }
-func (b externalKeyBucket) Save(ctx sdk.Context, key []byte, value interface{}) error {
+func (b externalKeyBucket) Save(ctx HasKVStore, key []byte, value interface{}) error {
 	return b.save(ctx, key, value)
 }
 
-func (b bucketBase) delete(ctx sdk.Context, key []byte) error {
+func (b bucketBase) Delete(ctx HasKVStore, key []byte) error {
 	rootStore := b.rootStore(ctx)
 	rootStore.Delete(key)
 	// TODO: delete indexes
 	return nil
 }
 
-func (b externalKeyBucket) Delete(ctx sdk.Context, key []byte) error {
-	return b.delete(ctx, key)
-}
-
-func (b bucketBase) Has(ctx sdk.Context, key []byte) (bool, error) {
+func (b bucketBase) Has(ctx HasKVStore, key []byte) (bool, error) {
 	rootStore := b.rootStore(ctx)
 	return rootStore.Has(key), nil
 }
@@ -195,16 +190,8 @@ func NewNaturalKeyBucket(key sdk.StoreKey, bucketPrefix string, cdc *codec.Codec
 	return &naturalKeyBucket{bucketBase{key, bucketPrefix, cdc, indexes}}
 }
 
-func (n naturalKeyBucket) GetOne(ctx sdk.Context, dest HasID) error {
-	return n.getOne(ctx, dest.ID(), dest)
-}
-
-func (n naturalKeyBucket) Save(ctx sdk.Context, value HasID) error {
+func (n naturalKeyBucket) Save(ctx HasKVStore, value HasID) error {
 	return n.save(ctx, value.ID(), value)
-}
-
-func (n naturalKeyBucket) Delete(ctx sdk.Context, hasID HasID) error {
-	return n.delete(ctx, hasID.ID())
 }
 
 func NewAutoIDBucket(key sdk.StoreKey, bucketPrefix string, cdc *codec.Codec, indexes []Index, idGenerator func(x uint64) []byte) AutoIDBucket {
@@ -230,7 +217,7 @@ func readUInt64(bz []byte) (uint64, error) {
 	return x, nil
 }
 
-func (a autoIDBucket) Create(ctx sdk.Context, value interface{}) ([]byte, error) {
+func (a autoIDBucket) Create(ctx HasKVStore, value interface{}) ([]byte, error) {
 	st := a.indexStore(ctx, "$")
 	bz := st.Get([]byte("$"))
 	var nextID uint64 = 0
@@ -269,7 +256,7 @@ func (i *iterator) Release() {
 
 type indexIterator struct {
 	bucketBase
-	ctx sdk.Context
+	ctx HasKVStore
 	it    sdk.Iterator
 	start []byte
 	end   []byte

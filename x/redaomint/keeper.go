@@ -145,13 +145,13 @@ func (k Keeper) SetLandAllocation(ctx sdk.Context, allocation LandAllocation) er
 	}
 	// look for an existing allocation
 	var existing LandAllocation
-	err = k.landAllocations.GetOne(ctx, &existing)
+	err = k.landAllocations.GetOne(ctx, existing.ID(), &existing)
 	if err != nil {
 		metadata.TotalLandAllocations = metadata.TotalLandAllocations.Sub(existing.Allocation)
 	}
 	if allocation.Allocation.IsZero() {
 		// delete if the new allocation is zero
-		err = k.landAllocations.Delete(ctx, allocation)
+		err = k.landAllocations.Delete(ctx, allocation.ID())
 		if err != nil {
 			return err
 		}
